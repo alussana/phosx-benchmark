@@ -28,7 +28,7 @@ process run_phosx {
 
     phosx \
         input/input.seqrnk \
-        -n 1000 \
+        -n 10000 \
         -c ${params.n_cores} \
         -k ${params.phosx_n_top_kinases} \
         -m ${params.phosx_min_n_hits} \
@@ -37,7 +37,7 @@ process run_phosx {
     #phosx \
         input/input.seqrnk \
         -p input/pssm_dict.h5 \
-        -n 1000 \
+        -n 10000 \
         -c ${params.n_cores} \
         -k ${params.phosx_n_top_kinases} \
         -m ${params.phosx_min_n_hits} \
