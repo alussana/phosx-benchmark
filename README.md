@@ -1,5 +1,9 @@
 # phosx-benchmark
 
+Benchmark of the kinase activity inference method [PhosX](https://github.com/alussana/phosx).
+
+> Research paper: [https://doi.org/10.1101/2024.03.22.586304](https://doi.org/10.1101/2024.03.22.586304)
+
 ## Build the container image
 
 Requires [Docker](https://www.docker.com) and [Apptainer](https://apptainer.org).
@@ -30,3 +34,18 @@ nextflow run main.nf -resume -with-dag misc/flowchart.svg
 
 ![flowchart](misc/flowchart.svg)
 
+## Cite
+
+BibTeX:
+
+```bibtex
+@article{Lussana2024,
+  title = {PhosX: data-driven kinase activity inference from phosphoproteomics experiments},
+  url = {http://dx.doi.org/10.1101/2024.03.22.586304},
+  DOI = {10.1101/2024.03.22.586304},
+  publisher = {Cold Spring Harbor Laboratory},
+  author = {Lussana,  Alessandro and Petsalaki,  Evangelia},
+  year = {2024},
+  month = mar 
+}
+```
