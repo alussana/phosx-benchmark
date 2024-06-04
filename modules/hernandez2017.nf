@@ -161,6 +161,7 @@ Compute AUROC and precision. Reapeat 60 times.
 process benchmark_phosx_hernandez2017 {
 
     publishDir "${out_dir}", pattern: "kinase_activity_benchmark/PhosX/hernandez2017/*.pdf", mode: 'copy'
+    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/PhosX/hernandez2017/tyr_intersection/*.pdf", mode: 'copy'
     publishDir "${out_dir}", pattern: "kinase_activity_benchmark/PhosX/hernandez2017/intersection/*.pdf", mode: 'copy'
     publishDir "${out_dir}", pattern: "kinase_activity_benchmark/PhosX/hernandez2017/*.tsv", mode: 'copy'
 
@@ -174,12 +175,14 @@ process benchmark_phosx_hernandez2017 {
         path "kinase_activity_benchmark/PhosX/hernandez2017/*.pdf"
         path "kinase_activity_benchmark/PhosX/hernandez2017/*.tsv", emit: tsv
         path "kinase_activity_benchmark/PhosX/hernandez2017/intersection/*.pdf"
+        path "kinase_activity_benchmark/PhosX/hernandez2017/tyr_intersection/*.pdf"
 
     script:
     """
     CACHEBUST=0
 
     mkdir -p kinase_activity_benchmark/PhosX/hernandez2017/intersection/
+    mkdir -p kinase_activity_benchmark/PhosX/hernandez2017/tyr_intersection/
     mkdir -p data/phosx
     mkdir -p data/gsea
     mkdir -p data/kinex
@@ -238,6 +241,13 @@ process benchmark_phosx_hernandez2017 {
         input/metadata.tsv \
         "${params.kinase_activity_metric}" \
         kinase_activity_benchmark/PhosX/hernandez2017/intersection/
+
+    hernandez2017_phosx_kinase_activity_benchmark_tyr_intersection.py \
+        input_files_phosx.txt \
+        input_files_gsea.txt \
+        input/metadata.tsv \
+        "${params.kinase_activity_metric}" \
+        kinase_activity_benchmark/PhosX/hernandez2017/tyr_intersection/
     """
 
 }

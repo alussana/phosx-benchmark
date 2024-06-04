@@ -28,19 +28,14 @@ process run_phosx {
     """
     mkdir -p PhosX/${id}
 
-    #phosx \
-        input/input.seqrnk \
-        -n 10000 \
-        -c ${params.n_cores} \
-        -k ${params.phosx_n_top_kinases} \
-        -m ${params.phosx_min_n_hits} \
-        > PhosX/${id}.tsv
+    CACHEBUST=1
 
     phosx \
         input/input.seqrnk \
         -n 10000 \
         -c ${params.n_cores} \
-        -k ${params.phosx_n_top_kinases} \
+        -stk ${params.phosx_s_t_n_top_kinases} \
+        -yk ${params.phosx_y_n_top_kinases} \
         -m ${params.phosx_min_n_hits} \
         --plot-figures \
         -d PhosX/${id} \
