@@ -48,6 +48,14 @@ specified in the second tab-separated column of input/dict.tsv
 with the corresponding word found in the first column
 
 discard untranslated rows
+
+.META:
+1   UniProtAC 
+2   residuePos
+3   Gene Name
+4   ENSG
+5   ENSP
+6   log2fc
 */
 process hernandez2017_rnk_translate1col_w_dict {
 
@@ -164,6 +172,8 @@ process benchmark_phosx_hernandez2017 {
     publishDir "${out_dir}", pattern: "kinase_activity_benchmark/PhosX/hernandez2017/tyr_intersection/*.pdf", mode: 'copy'
     publishDir "${out_dir}", pattern: "kinase_activity_benchmark/PhosX/hernandez2017/intersection/*.pdf", mode: 'copy'
     publishDir "${out_dir}", pattern: "kinase_activity_benchmark/PhosX/hernandez2017/*.tsv", mode: 'copy'
+    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/PhosX/hernandez2017/tyr_intersection/*.tsv", mode: 'copy'
+    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/PhosX/hernandez2017/intersection/*.tsv", mode: 'copy'
 
     input:
         path 'input/phosx/*.tsv'
@@ -183,6 +193,7 @@ process benchmark_phosx_hernandez2017 {
 
     mkdir -p kinase_activity_benchmark/PhosX/hernandez2017/intersection/
     mkdir -p kinase_activity_benchmark/PhosX/hernandez2017/tyr_intersection/
+    mkdir -p kinase_activity_benchmark/PhosX/hernandez2017/tyronly_intersection/
     mkdir -p data/phosx
     mkdir -p data/gsea
     mkdir -p data/kinex
@@ -248,6 +259,13 @@ process benchmark_phosx_hernandez2017 {
         input/metadata.tsv \
         "${params.kinase_activity_metric}" \
         kinase_activity_benchmark/PhosX/hernandez2017/tyr_intersection/
+
+    #hernandez2017_phosx_kinase_activity_benchmark_tyronly_intersection.py \
+        input_files_phosx.txt \
+        input_files_gsea.txt \
+        input/metadata.tsv \
+        "${params.kinase_activity_metric}" \
+        kinase_activity_benchmark/PhosX/hernandez2017/tyronly_intersection/
     """
 
 }

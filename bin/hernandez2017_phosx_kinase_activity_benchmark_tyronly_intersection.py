@@ -9,6 +9,8 @@ import os
 from sklearn.metrics import roc_curve, auc, precision_recall_curve
 from itertools import product
 from random import sample
+import phosx
+from phosx.pssm_enrichments import read_pssms
 
 def quantile_normalize(df:pd.DataFrame):
     """
@@ -22,43 +24,31 @@ def quantile_normalize(df:pd.DataFrame):
     """
     # Rank the values in each column
     ranked = df.stack().groupby(df.rank(method='first').stack().astype(int)).mean()
-    
     # Sort the ranks and use them as indices to get the quantiles
     quantiles = df.rank(method='min').stack().astype(int).map(ranked).unstack()
-    
     # Sort the indices of the original DataFrame
     quantiles = quantiles.sort_index()
-    
     return quantiles
 
 def scale_01(df):
-    
     # Subtract the minimum in each column
     scaled_df = df.apply(lambda x: x - x.min())
-    
     # Divide by the maximum in each column
     scaled_df = scaled_df.apply(lambda x: x / x.max())
-    
     return scaled_df
 
 def compute_pr(labels, scores, n_points=200):
     precision, recall, thresholds = precision_recall_curve(labels, scores)
-    
     interp_recall = np.linspace(0, 1, n_points)
     interp_precision = np.interp(x=interp_recall, xp=precision, fp=recall)
-    
     roc_auc = auc(recall, precision)
-    
     return(interp_recall, interp_precision, roc_auc)
 
 def compute_roc(labels, scores, n_points=200):
     fpr, tpr, thresholds = roc_curve(labels, scores)
-    
     interp_fpr = np.linspace(0, 1, n_points)
     interp_tpr = np.interp(x=interp_fpr, xp=fpr, fp=tpr)
-    
     roc_auc = auc(fpr, tpr)
-    
     return(interp_fpr, interp_tpr, roc_auc)
 
 
@@ -168,6 +158,10 @@ def main():
     out_prefix = 'phosx/kinase_activity/'
     """
     
+    y_pssm_h5 = f'{phosx.__path__[0]}/data/Y_PSSMs.h5'
+    y_pssms = read_pssms(y_pssm_h5)
+    y_kinases_list = list(y_pssms.keys())
+    
     gsea_kinase_activity_metric_str = 'NES'
    
     # PhosX kinase activity 
@@ -200,6 +194,8 @@ def main():
     kinase_activity_phosx_df.columns = ['Kinase','Experiment','Kinase activity change']
     # remove NAs due to missing phosphosite sequence
     kinase_activity_phosx_df = kinase_activity_phosx_df.dropna()
+    # only keep tyrosine kinases
+    kinase_activity_phosx_df = kinase_activity_phosx_df.loc[kinase_activity_phosx_df['Kinase'].apply(lambda x: x in y_kinases_list), ]
     # make index
     kinase_activity_phosx_df.index = kinase_activity_phosx_df.apply(
         lambda x: f'{x["Experiment"]}__{x["Kinase"]}',
@@ -238,6 +234,8 @@ def main():
     kinase_activity_gsea_df.columns = ['Kinase','Experiment','Kinase activity change']
     # remove NAs due to no annotated substrate found for given kinases in the data
     kinase_activity_gsea_df = kinase_activity_gsea_df.dropna()
+    # only keep tyrosine kinases
+    kinase_activity_gsea_df = kinase_activity_gsea_df.loc[kinase_activity_gsea_df['Kinase'].apply(lambda x: x in y_kinases_list), ]
     # make index
     kinase_activity_gsea_df.index = kinase_activity_gsea_df.apply(
         lambda x: f'{x["Experiment"]}__{x["Kinase"]}',
@@ -246,7 +244,7 @@ def main():
     kinase_activity_gsea_df.to_csv(f'{out_prefix}hernandez2017_kinase_activity_gsea.tsv', header=True, index=True, sep='\t')
     ##########
     
-    # Take only instances for which a kinase activity could be computed by all methods
+    # Take only instances for which a kinase activity could be computed by all methods and it involves tyrosine kinases
     intersection_index = list(set(kinase_activity_phosx_df.index).intersection(set(kinase_activity_gsea_df.index)))
     kinase_activity_phosx_df = kinase_activity_phosx_df.loc[intersection_index,]
     kinase_activity_gsea_df = kinase_activity_gsea_df.loc[intersection_index,]

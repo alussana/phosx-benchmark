@@ -205,7 +205,7 @@ def main():
         lambda x: f'{x["Experiment"]}__{x["Kinase"]}',
         axis=1
     )
-    kinase_activity_phosx_df.to_csv(f'{out_prefix}hernandez2017_kinase_activity_phosx.tsv', header=True, index=True, sep='\t')
+    kinase_activity_phosx_df.to_csv(f'{out_prefix}cptac_kinase_activity_phosx.tsv', header=True, index=True, sep='\t')
     ##########
     
     # GSEApy kinase activity
@@ -243,7 +243,7 @@ def main():
         lambda x: f'{x["Experiment"]}__{x["Kinase"]}',
         axis=1
     )
-    kinase_activity_gsea_df.to_csv(f'{out_prefix}hernandez2017_kinase_activity_gsea.tsv', header=True, index=True, sep='\t')
+    kinase_activity_gsea_df.to_csv(f'{out_prefix}cptac_kinase_activity_gsea.tsv', header=True, index=True, sep='\t')
     ##########
     
     # Take only instances for which a kinase activity could be computed by all methods
@@ -264,8 +264,8 @@ def main():
     upregulation_df = metadata_df.loc[metadata_df['Regulation']==1]
     downregulation_df = metadata_df.loc[metadata_df['Regulation']==-1]
     
-    upregulation_df.to_csv(f'{out_prefix}hernandez2017_upregulated.tsv', header=True, index=True, sep='\t')
-    downregulation_df.to_csv(f'{out_prefix}hernandez2017_downregulated.tsv', header=True, index=True, sep='\t')
+    upregulation_df.to_csv(f'{out_prefix}cptac_upregulated.tsv', header=True, index=True, sep='\t')
+    downregulation_df.to_csv(f'{out_prefix}cptac_downregulated.tsv', header=True, index=True, sep='\t')
     
     metadata_kinases_set = set(metadata_df['Kinase'].unique())
     metadata_experiments_set = set(metadata_df['Experiment'].unique())
@@ -521,7 +521,7 @@ def main():
     plt.legend(loc='lower right', frameon=False)
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f'{out_prefix}hernandez2017_upreg_auc_prc_violinplots_w_title.pdf')
+    plt.savefig(f'{out_prefix}cptac_upreg_auc_prc_violinplots_w_title.pdf')
     
     plt.clf()
     plt.figure(figsize=[3.5,4])
@@ -538,7 +538,7 @@ def main():
     plt.legend(loc='lower right', frameon=False)
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f'{out_prefix}hernandez2017_downreg_auc_prc_violinplots_w_title.pdf')
+    plt.savefig(f'{out_prefix}cptac_downreg_auc_prc_violinplots_w_title.pdf')
     
     plt.clf()
     plt.figure(figsize=[3.5,4])
@@ -555,7 +555,7 @@ def main():
     plt.legend(loc='lower right', frameon=False)
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f'{out_prefix}hernandez2017_joined_auc_prc_violinplots_w_title.pdf')
+    plt.savefig(f'{out_prefix}cptac_joined_auc_prc_violinplots_w_title.pdf')
     
     plt.clf()
     plt.figure(figsize=[3.5,3])
@@ -571,7 +571,7 @@ def main():
     plt.legend(loc='lower right', frameon=False)
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f'{out_prefix}hernandez2017_upreg_auc_prc_violinplots.pdf')
+    plt.savefig(f'{out_prefix}cptac_upreg_auc_prc_violinplots.pdf')
     
     plt.clf()
     plt.figure(figsize=[3.5,3])
@@ -587,7 +587,7 @@ def main():
     plt.legend(loc='lower right', frameon=False)
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f'{out_prefix}hernandez2017_downreg_auc_prc_violinplots.pdf')
+    plt.savefig(f'{out_prefix}cptac_downreg_auc_prc_violinplots.pdf')
     
     plt.clf()
     plt.figure(figsize=[3.5,3])
@@ -603,7 +603,7 @@ def main():
     plt.legend(loc='lower right', frameon=False)
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f'{out_prefix}hernandez2017_joined_auc_prc_violinplots.pdf')
+    plt.savefig(f'{out_prefix}cptac_joined_auc_prc_violinplots.pdf')
     ##########    
 
     # Upregulated and Downregulated subset comparisons
@@ -620,7 +620,7 @@ def main():
     plt.legend(loc='upper left', frameon=False, labels=["Upregulated", "Downregulated"])
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f'{out_prefix}hernandez2017_PhosX_score_regulated_kinases.pdf')
+    plt.savefig(f'{out_prefix}cptac_PhosX_score_regulated_kinases.pdf')
     
     plt.clf()
     plt.figure(figsize=(3.5, 3))
@@ -630,7 +630,7 @@ def main():
     plt.legend(loc='upper left', frameon=False, labels=["Upregulated", "Downregulated"])
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f'{out_prefix}hernandez2017_GSEApy_score_regulated_kinases.pdf')
+    plt.savefig(f'{out_prefix}cptac_GSEApy_score_regulated_kinases.pdf')
     
    
     regulated_df = regulated_df.dropna()
@@ -660,7 +660,7 @@ def main():
     plt.title(f'Upregulated examples: {n_upregulated}\nDownregulated examples: {n_downregulated}')
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f'{out_prefix}hernandez2017_regulated_kinases_ROC_w_title.pdf')
+    plt.savefig(f'{out_prefix}cptac_regulated_kinases_ROC_w_title.pdf')
     
     plt.clf()
     plt.figure(figsize=(3.5, 3))
@@ -676,7 +676,7 @@ def main():
     plt.legend(loc='lower right', frameon=False)
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f'{out_prefix}hernandez2017_regulated_kinases_ROC.pdf')
+    plt.savefig(f'{out_prefix}cptac_regulated_kinases_ROC.pdf')
 
     phosx_recall, phosx_precision, phosx_pr_auc = compute_pr(regulated_df['Regulation'], regulated_df['PhosX Activity Score'])
     gsea_recall, gsea_precision, gsea_pr_auc = compute_pr(regulated_df['Regulation'], regulated_df['GSEApy Activity Score'])
@@ -696,7 +696,7 @@ def main():
     plt.title(f'Upregulated examples: {n_upregulated}\nDownregulated examples: {n_downregulated}')
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f'{out_prefix}hernandez2017_regulated_kinases_PR_w_title.pdf')
+    plt.savefig(f'{out_prefix}cptac_regulated_kinases_PR_w_title.pdf')
     
     plt.clf()
     plt.figure(figsize=(3.5, 3))
@@ -712,7 +712,7 @@ def main():
     plt.legend(loc='lower left', frameon=False)
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f'{out_prefix}hernandez2017_regulated_kinases_PR.pdf')
+    plt.savefig(f'{out_prefix}cptac_regulated_kinases_PR.pdf')
     
     
     plt.clf()
@@ -723,7 +723,7 @@ def main():
     plt.legend(loc='upper left', frameon=False, labels=["Upregulated", "Downregulated"])
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f'{out_prefix}hernandez2017_PhosX_score_regulated_kinases_intersection.pdf')
+    plt.savefig(f'{out_prefix}cptac_PhosX_score_regulated_kinases_intersection.pdf')
     
     plt.clf()
     plt.figure(figsize=(3.5, 3))
@@ -733,7 +733,7 @@ def main():
     plt.legend(loc='upper left', frameon=False, labels=["Upregulated", "Downregulated"])
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f'{out_prefix}hernandez2017_GSEApy_score_regulated_kinases_intersection.pdf')
+    plt.savefig(f'{out_prefix}cptac_GSEApy_score_regulated_kinases_intersection.pdf')
     
     
 if __name__ == '__main__':

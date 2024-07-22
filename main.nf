@@ -22,6 +22,13 @@ include { hernandez2017_make_seqrnk } from './modules/hernandez2017'
 include { hernandez2017_make_rnk } from './modules/hernandez2017'
 include { benchmark_phosx_hernandez2017 } from './modules/hernandez2017'
 
+include { parse_cptac_dataset } from './modules/cptac'
+include { split_cptac_samples } from './modules/cptac'
+include { make_cptac_rnk } from './modules/cptac'
+include { make_cptac_seqrnk } from './modules/cptac'
+include { make_cptac_uniprot_rnk } from './modules/cptac'
+include { benchmark_phosx_cptac } from './modules/cptac'
+
 include { pssm_background_scores } from './modules/phossea'
 
 include { run_phosx } from './modules/phosx'
@@ -149,7 +156,48 @@ workflow HERNANDEZ2017_DATASET {
 
 }
 
+workflow CPTAC_DATASET {
+
+    take:
+        uniprotac2ENSP_dict
+
+    main:
+        dataset = parse_cptac_dataset()
+        data = split_cptac_samples( dataset.data )
+                    .flatMap()
+                    .map{file -> tuple( file.baseName, file )}
+        rnk = make_cptac_rnk( data )
+        uniprot_rnk = make_cptac_uniprot_rnk( rnk, uniprotac2ENSP_dict )
+        seqrnk = make_cptac_seqrnk( data )
+
+        metadata = dataset.metadata
+
+    emit:
+        metadata
+        uniprot_rnk
+        seqrnk
+        rnk
+
+}
+
 workflow PHOSX_HERNANDEZ2017 {
+
+    take:
+        seqrnk
+        pssm_dict_h5
+        pssm_bg_scores
+
+    main:
+        phosx_output = run_phosx( seqrnk, pssm_dict_h5, pssm_bg_scores )
+                            .tsv
+                            .collect()
+
+    emit:
+        phosx_output
+
+}
+
+workflow PHOSX_CPTAC {
 
     take:
         seqrnk
@@ -183,7 +231,40 @@ workflow KINEX_HERNANDEZ2017 {
 
 }
 
+workflow KINEX_CPTAC {
+
+    take:
+        seqrnk
+        dict
+        scoring_matrix
+    
+    main:
+        kinex_output = run_kinex( seqrnk, dict, scoring_matrix )
+                            .tsv
+                            .collect()
+
+    emit:
+        kinex_output
+
+}
+
 workflow GSEA_HERNANDEZ2017 {
+
+    take:
+        psp_kin_sub_clusters
+        rnk
+
+    main:
+        gsea_output = run_gsea( psp_kin_sub_clusters, rnk )
+                        .csv
+                        .collect()
+
+    emit:
+        gsea_output
+
+}
+
+workflow GSEA_CPTAC {
 
     take:
         psp_kin_sub_clusters
@@ -212,6 +293,22 @@ workflow BENCHMARK_PHOSX_HERNANDEZ2017 {
                                       gsea_output,
                                       kinex_output,
                                       metadata )
+
+}
+
+workflow BENCHMARK_PHOSX_CPTAC {
+
+    take:
+        phosx_output
+        gsea_output
+        kinex_output
+        metadata
+
+    main:
+        benchmark_phosx_cptac(phosx_output,
+                              gsea_output,
+                              kinex_output,
+                              metadata )
 
 }
 
@@ -251,6 +348,9 @@ workflow {
     
     // get hernandez2017 dataset
     hernandez2017 = HERNANDEZ2017_DATASET( gene_id_dict.uniprotac2ENSP_dict )
+
+    // get cptac dataset
+    cptac = CPTAC_DATASET( gene_id_dict.uniprotac2ENSP_dict )
     
     // run methods on hernandez2017
     phosx_hernandez2017 = PHOSX_HERNANDEZ2017( hernandez2017.seqrnk,
@@ -261,13 +361,29 @@ workflow {
                                                scoring_matrix )
     gsea_hernandez2017 = GSEA_HERNANDEZ2017( psp_kin_sub_clusters,
                                              hernandez2017.rnk )
+
+    // run methods on cptac
+    phosx_cptac = PHOSX_CPTAC( cptac.seqrnk,
+                               ser_thr_kinases_pssm_dict_h5,
+                               pssm_bg_scores.tsvgz )
+    kinex_cptac = KINEX_CPTAC( cptac.seqrnk,
+                               gene_synonym_2_gene_name_dict,
+                               scoring_matrix )
+    gsea_cptac = GSEA_CPTAC( psp_kin_sub_clusters,
+                             cptac.uniprot_rnk )
     
-    // performance comparison
+    // performance comparison on Hernandez2017
     BENCHMARK_PHOSX_HERNANDEZ2017( phosx_hernandez2017,
                                    gsea_hernandez2017,
                                    kinex_hernandez2017,
                                    hernandez2017.metadata )
 
+
+    // performance comparison on cptac
+    BENCHMARK_PHOSX_CPTAC( phosx_cptac,
+                           gsea_cptac,
+                           kinex_cptac,
+                           cptac.metadata )
 
     PUBLISH_CONFIG()
 

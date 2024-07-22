@@ -10,6 +10,8 @@ NOTE: only S/T phosphosites are considered for now
 process run_phosx {
 
     cpus "${params.n_cores}"
+    time '16h'
+    memory '16G'
 
     publishDir "${out_dir}", pattern: "PhosX/${id}.tsv", mode: 'copy'
     publishDir "${out_dir}", pattern: "PhosX/${id}/*pdf", mode: 'copy'
@@ -30,7 +32,7 @@ process run_phosx {
 
     CACHEBUST=1
 
-    phosx \
+    #phosx \
         input/input.seqrnk \
         -n 10000 \
         -c ${params.n_cores} \
@@ -40,6 +42,18 @@ process run_phosx {
         --plot-figures \
         -d PhosX/${id} \
         > PhosX/${id}.tsv
+
+    phosx \
+        input/input.seqrnk \
+        -n 10000 \
+        -c ${params.n_cores} \
+        -stk ${params.phosx_s_t_n_top_kinases} \
+        -yk ${params.phosx_y_n_top_kinases} \
+        -m ${params.phosx_min_n_hits} \
+        -d PhosX/${id} \
+        > PhosX/${id}.tsv
+
+    touch PhosX/${id}/__phony__.pdf
 
     """
 

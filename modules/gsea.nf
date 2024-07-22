@@ -28,7 +28,8 @@ ${params.gseapy_min_overlap} <= n <= ${params.gseapy_max_overlap} genes
 process run_gsea {
 
     cpus "${params.gseapy_threads}"
-    memory '10G'
+    memory '16G'
+    time '16h'
 
     publishDir "${out_dir}",
             pattern: "GSEA/*",
