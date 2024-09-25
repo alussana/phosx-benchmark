@@ -359,7 +359,7 @@ process benchmark_phosx_cptac {
 
     cat paths_phosx.txt | sort -g > input_files_phosx.txt
 
-    for file in \$(ls input/gsea/) do \
+    for file in \$(ls input/gsea/); do \
         linkpath=\$(readlink -f input/gsea/"\$file"); \
         echo "\$linkpath" >> symlink_paths_gsea.txt; \
     done
@@ -406,7 +406,7 @@ process benchmark_phosx_cptac {
         input_files_gsea.txt \
         input/metadata.tsv \
         "${params.kinase_activity_metric}" \
-        kinase_activity_benchmark/PhosX/cptac/tyronly_intersection/
+        kinase_activity_benchmark/PhosX/cptac/tyr_intersection/
 
     #cptac_phosx_kinase_activity_benchmark_tyronly_intersection.py \
         input_files_phosx.txt \

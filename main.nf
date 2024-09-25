@@ -3,6 +3,9 @@
 nextflow.enable.dsl=2
 
 include { publish } from './modules/utils'
+include { split } from './modules/utils'
+include { concatenate } from './modules/utils'
+include { translate2col } from './modules/utils'
 
 include { dl_human } from './modules/uniprot_id_dict'
 include { uniprotac_to_ensp_dict } from './modules/uniprot_id_dict'
@@ -137,16 +140,18 @@ workflow HERNANDEZ2017_DATASET {
 
     take:
         uniprotac2ENSP_dict
+        geneSynonym2geneName
 
     main:
         dataset = parse_hernandez2017_dataset()
         untranslated_rnk = dataset.rnk
                 .flatMap()
                 .map{file -> tuple( file.baseName, file )}
-        metadata = dataset.metadata
+        metadata = translate2col(dataset.metadata, geneSynonym2geneName )
         uniprot_rnk = hernandez2017_rnk_translate1col_w_dict( untranslated_rnk, uniprotac2ENSP_dict )
         seqrnk = hernandez2017_make_seqrnk( uniprot_rnk )
         rnk = hernandez2017_make_rnk( uniprot_rnk )
+        publish( Channel.of('datasets/hernandez2017/metadata_translated.tsv').combine(metadata) )
 
     emit:
         metadata
@@ -160,6 +165,7 @@ workflow CPTAC_DATASET {
 
     take:
         uniprotac2ENSP_dict
+        geneSynonym2geneName
 
     main:
         dataset = parse_cptac_dataset()
@@ -170,7 +176,8 @@ workflow CPTAC_DATASET {
         uniprot_rnk = make_cptac_uniprot_rnk( rnk, uniprotac2ENSP_dict )
         seqrnk = make_cptac_seqrnk( data )
 
-        metadata = dataset.metadata
+        metadata = translate2col(dataset.metadata, geneSynonym2geneName )
+        publish( Channel.of('datasets/cptac/metadata_translated.tsv').combine(metadata) )
 
     emit:
         metadata
@@ -347,10 +354,12 @@ workflow {
     scoring_matrix = KINEX_SCORING_MATRIX( gene_synonym_2_gene_name_dict )
     
     // get hernandez2017 dataset
-    hernandez2017 = HERNANDEZ2017_DATASET( gene_id_dict.uniprotac2ENSP_dict )
+    hernandez2017 = HERNANDEZ2017_DATASET( gene_id_dict.uniprotac2ENSP_dict,
+                                           gene_synonym_2_gene_name_dict )
 
     // get cptac dataset
-    cptac = CPTAC_DATASET( gene_id_dict.uniprotac2ENSP_dict )
+    cptac = CPTAC_DATASET( gene_id_dict.uniprotac2ENSP_dict,
+                           gene_synonym_2_gene_name_dict )
     
     // run methods on hernandez2017
     phosx_hernandez2017 = PHOSX_HERNANDEZ2017( hernandez2017.seqrnk,
