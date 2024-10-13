@@ -42,6 +42,34 @@ process parse_hernandez2017_dataset {
 
 }
 
+
+/*
+translate all the words in the second field of input/file.tsv 
+specified in the first tab-separated column of input/dict.tsv
+with the corresponding word found in the second column
+
+don't discard untranslated rows
+*/
+process translate_hernandez2017_metadata {
+
+    input:
+        path 'input/file.tsv'
+        path 'input/dict.tsv.gz'
+
+    output:
+        path 'translated_file.tsv'
+
+    script:
+    """
+    translate_hernandez2017_metadata.py \
+        input/dict.tsv.gz \
+        input/file.tsv \
+        > translated_file.tsv
+    """
+
+}
+
+
 /*
 translate all the words in the first field of input/file.tsv 
 specified in the second tab-separated column of input/dict.tsv
@@ -168,12 +196,12 @@ Compute AUROC and precision. Reapeat 60 times.
 */
 process benchmark_phosx_hernandez2017 {
 
-    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/PhosX/hernandez2017/*.pdf", mode: 'copy'
-    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/PhosX/hernandez2017/tyr_intersection/*.pdf", mode: 'copy'
-    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/PhosX/hernandez2017/intersection/*.pdf", mode: 'copy'
-    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/PhosX/hernandez2017/*.tsv", mode: 'copy'
-    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/PhosX/hernandez2017/tyr_intersection/*.tsv", mode: 'copy'
-    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/PhosX/hernandez2017/intersection/*.tsv", mode: 'copy'
+    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/hernandez2017/union/*.pdf", mode: 'copy'
+    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/hernandez2017/intersection_s_t_y/*.pdf", mode: 'copy'
+    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/hernandez2017/intersection_s_t/*.pdf", mode: 'copy'
+    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/hernandez2017/union/*.tsv", mode: 'copy'
+    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/hernandez2017/intersection_s_t_y/*.tsv", mode: 'copy'
+    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/hernandez2017/intersection_s_t/*.tsv", mode: 'copy'
 
     input:
         path 'input/phosx/*.tsv'
@@ -182,18 +210,18 @@ process benchmark_phosx_hernandez2017 {
         path 'input/metadata.tsv'
 
     output:
-        path "kinase_activity_benchmark/PhosX/hernandez2017/*.pdf"
-        path "kinase_activity_benchmark/PhosX/hernandez2017/*.tsv", emit: tsv
-        path "kinase_activity_benchmark/PhosX/hernandez2017/intersection/*.pdf"
-        path "kinase_activity_benchmark/PhosX/hernandez2017/tyr_intersection/*.pdf"
+        path "kinase_activity_benchmark/hernandez2017/union/*.pdf"
+        path "kinase_activity_benchmark/hernandez2017/union/*.tsv", emit: tsv
+        path "kinase_activity_benchmark/hernandez2017/intersection_s_t_y/*.pdf"
+        path "kinase_activity_benchmark/hernandez2017/intersection_s_t/*.pdf"
 
     script:
     """
     CACHEBUST=0
 
-    mkdir -p kinase_activity_benchmark/PhosX/hernandez2017/intersection/
-    mkdir -p kinase_activity_benchmark/PhosX/hernandez2017/tyr_intersection/
-    mkdir -p kinase_activity_benchmark/PhosX/hernandez2017/tyronly_intersection/
+    mkdir -p kinase_activity_benchmark/hernandez2017/union/
+    mkdir -p kinase_activity_benchmark/hernandez2017/intersection_s_t_y/
+    mkdir -p kinase_activity_benchmark/hernandez2017/intersection_s_t/
     mkdir -p data/phosx
     mkdir -p data/gsea
     mkdir -p data/kinex
@@ -243,7 +271,7 @@ process benchmark_phosx_hernandez2017 {
         input_files_kinex.txt \
         input/metadata.tsv \
         "${params.kinase_activity_metric}" \
-        kinase_activity_benchmark/PhosX/hernandez2017/
+        kinase_activity_benchmark/hernandez2017/union/
 
     hernandez2017_phosx_kinase_activity_benchmark_intersection.py \
         input_files_phosx.txt \
@@ -251,21 +279,21 @@ process benchmark_phosx_hernandez2017 {
         input_files_kinex.txt \
         input/metadata.tsv \
         "${params.kinase_activity_metric}" \
-        kinase_activity_benchmark/PhosX/hernandez2017/intersection/
+        kinase_activity_benchmark/hernandez2017/intersection_s_t/
 
     hernandez2017_phosx_kinase_activity_benchmark_tyr_intersection.py \
         input_files_phosx.txt \
         input_files_gsea.txt \
         input/metadata.tsv \
         "${params.kinase_activity_metric}" \
-        kinase_activity_benchmark/PhosX/hernandez2017/tyr_intersection/
+        kinase_activity_benchmark/hernandez2017/intersection_s_t_y/
 
     #hernandez2017_phosx_kinase_activity_benchmark_tyronly_intersection.py \
         input_files_phosx.txt \
         input_files_gsea.txt \
         input/metadata.tsv \
         "${params.kinase_activity_metric}" \
-        kinase_activity_benchmark/PhosX/hernandez2017/tyronly_intersection/
+        kinase_activity_benchmark/hernandez2017/intersection_y/
     """
 
 }

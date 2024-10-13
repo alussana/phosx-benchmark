@@ -106,7 +106,7 @@ Translate gene synonym into gene names for kinases
 1   Kinase Name
 2   tab-separated list of substrates (UniProtAC_ResiduePosition)
 */
-process translate_kin_phos_clusters {
+process translate_kin_phos_clusters_w_uniprot {
 
     publishDir "${out_dir}",
             pattern: 'datasets/psp/*.tsv',
@@ -140,6 +140,39 @@ process translate_kin_phos_clusters {
     """
 
 }
+
+
+/*
+Translate kinase aliases with Ensembl HGNC gene symbol
+
+.META:
+1   Kinase Name
+2   tab-separated list of substrates (UniProtAC_ResiduePosition)
+*/
+process translate_kin_phos_clusters {
+
+    publishDir "${out_dir}",
+            pattern: 'datasets/psp/*.tsv',
+            mode: 'copy'
+
+    input:
+        path 'input/k_p_clusters.tsv'
+        path 'input/9606.protein.aliases.v12.0.txt.gz'
+
+    output:
+        path 'datasets/psp/kin_phos_clusters_tr.tsv'
+
+    script:
+    """
+    mkdir -p datasets/psp/
+
+    translate_k_p_clusters.py \
+        > datasets/psp/kin_phos_clusters_tr.tsv \
+        2> kinases_w_exceptions.txt
+    """
+
+}
+
 
 /*
 get the collection of phosphosites in the human phosphoproteome from 

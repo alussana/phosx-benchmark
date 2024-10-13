@@ -8,12 +8,12 @@ the kineses in the human phosphoproteome
 
 translate gene synonyms used for kinases into gene names
 */
-process dl_kinex_scoring_matrix {
+process get_kinex_scoring_matrix {
 
     publishDir "${out_dir}", pattern: "datasets/Kinex/kinex_scoring_matrix_82k_translated.tsv", mode: 'copy'
 
     input:
-        path 'input/gene_synonym_2_gene_name_dict.tsv'
+        path 'input/dict.tsv.gz'
 
     output:
         path "datasets/Kinex/kinex_scoring_matrix_82k_translated.tsv"
@@ -22,8 +22,8 @@ process dl_kinex_scoring_matrix {
     """
     mkdir -p datasets/Kinex
 
-    dl_kinex_scoring_matrix.py \
-        input/gene_synonym_2_gene_name_dict.tsv \
+    get_kinex_scoring_matrix.py \
+        input/dict.tsv.gz \
         > datasets/Kinex/kinex_scoring_matrix_82k_translated.tsv
     """
 
@@ -39,7 +39,7 @@ process run_kinex {
     input:
         tuple val(id),
               file('input/input.seqrnk')
-        path 'input/gene_synonym_2_gene_name_dict.tsv'
+        path 'input/9606.protein.aliases.v12.0.txt.gz'
         path 'input/scoring_matrix.tsv'
 
     output:
@@ -47,14 +47,14 @@ process run_kinex {
 
     script:
     """
-    mkdir -p Kinex/${id}
+    mkdir -p Kinex
 
     run_kinex.py \
         input/input.seqrnk \
-        Kinex/${id}/${id}.pdf \
         ${params.kinex_fc_threshold} \
-        input/gene_synonym_2_gene_name_dict.tsv \
+        input/9606.protein.aliases.v12.0.txt.gz \
         input/scoring_matrix.tsv \
+        Kinex/pdf/${id}.pdf \
         > Kinex/${id}.tsv
     """
 

@@ -22,44 +22,56 @@ def quantile_normalize(df:pd.DataFrame):
     """
     # Rank the values in each column
     ranked = df.stack().groupby(df.rank(method='first').stack().astype(int)).mean()
-    
     # Sort the ranks and use them as indices to get the quantiles
     quantiles = df.rank(method='min').stack().astype(int).map(ranked).unstack()
-    
     # Sort the indices of the original DataFrame
     quantiles = quantiles.sort_index()
-    
     return quantiles
 
+
 def scale_01(df):
-    
     # Subtract the minimum in each column
     scaled_df = df.apply(lambda x: x - x.min())
-    
     # Divide by the maximum in each column
     scaled_df = scaled_df.apply(lambda x: x / x.max())
-    
     return scaled_df
+
 
 def compute_pr(labels, scores, n_points=200):
     precision, recall, thresholds = precision_recall_curve(labels, scores)
-    
     interp_recall = np.linspace(0, 1, n_points)
     interp_precision = np.interp(x=interp_recall, xp=precision, fp=recall)
-    
     roc_auc = auc(recall, precision)
-    
     return(interp_recall, interp_precision, roc_auc)
+
 
 def compute_roc(labels, scores, n_points=200):
     fpr, tpr, thresholds = roc_curve(labels, scores)
-    
     interp_fpr = np.linspace(0, 1, n_points)
     interp_tpr = np.interp(x=interp_fpr, xp=fpr, fp=tpr)
-    
     roc_auc = auc(fpr, tpr)
-    
     return(interp_fpr, interp_tpr, roc_auc)
+
+
+def true_kinase_quantile(kinase_activity_df, regulation_df):
+    def find_true_kinase_quantile(ex_series):
+        kinase_str = ex_series["Kinase"]
+        experiment_str = ex_series["Experiment"]
+        regulation_int = ex_series["Regulation"]
+        exp_activity_df = kinase_activity_df.loc[kinase_activity_df["Experiment"]==experiment_str]
+        if regulation_int == 1:
+            exp_activity_df = exp_activity_df.sort_values(by="Kinase activity change", ascending=False)
+        elif regulation_int == -1:
+            exp_activity_df = exp_activity_df.sort_values(by="Kinase activity change", ascending=True)
+        exp_activity_df["Rank"] = range(1, len(exp_activity_df) + 1)
+        exp_activity_df["Rank"] = exp_activity_df["Rank"] / len(exp_activity_df)
+        if kinase_str in exp_activity_df["Kinase"].values:
+            quantile = float(exp_activity_df.loc[exp_activity_df["Kinase"]==kinase_str, "Rank"].values[0])
+        else:
+            quantile = np.nan
+        return quantile
+    quantile_series = regulation_df.apply(find_true_kinase_quantile, axis=1)
+    return quantile_series
 
 
 def top5percentScoreFraction(kinase_activity_df, regulation_df, metadata_experiments_set):
@@ -318,6 +330,65 @@ def main():
     ##########
     
     
+    # true kinase quantile
+    phosx_upreg_true_kinase_quantile_series = true_kinase_quantile(kinase_activity_phosx_df, upregulation_df)
+    phosx_downreg_true_kinase_quantile_series = true_kinase_quantile(kinase_activity_phosx_df, downregulation_df)
+    gsea_upreg_true_kinase_quantile_series = true_kinase_quantile(kinase_activity_gsea_df, upregulation_df)
+    gsea_downreg_true_kinase_quantile_series = true_kinase_quantile(kinase_activity_gsea_df, downregulation_df)
+    kinex_upreg_true_kinase_quantile_series = true_kinase_quantile(kinase_activity_kinex_df, upregulation_df)
+    kinex_downreg_true_kinase_quantile_series = true_kinase_quantile(kinase_activity_kinex_df, downregulation_df)
+    
+    phosx_joined_true_kinase_quantile_series = pd.concat([phosx_upreg_true_kinase_quantile_series, phosx_downreg_true_kinase_quantile_series])
+    gsea_joined_true_kinase_quantile_series = pd.concat([gsea_upreg_true_kinase_quantile_series, gsea_downreg_true_kinase_quantile_series])
+    kinex_joined_true_kinase_quantile_series = pd.concat([kinex_upreg_true_kinase_quantile_series, kinex_downreg_true_kinase_quantile_series])
+
+    joined_true_kinase_quantile_df = pd.DataFrame({"PhosX": phosx_joined_true_kinase_quantile_series, "Kinex": kinex_joined_true_kinase_quantile_series, "GSEApy": gsea_joined_true_kinase_quantile_series}).dropna().melt()
+    joined_true_kinase_quantile_df.columns = ["Method", "Normalized rank"]
+    upreg_true_kinase_quantile_df = pd.DataFrame({"PhosX": phosx_upreg_true_kinase_quantile_series, "Kinex": kinex_upreg_true_kinase_quantile_series, "GSEApy": gsea_upreg_true_kinase_quantile_series}).dropna().melt()
+    upreg_true_kinase_quantile_df.columns = ["Method", "Normalized rank"]
+    downreg_true_kinase_quantile_df = pd.DataFrame({"PhosX": phosx_downreg_true_kinase_quantile_series, "Kinex": kinex_downreg_true_kinase_quantile_series, "GSEApy": gsea_downreg_true_kinase_quantile_series}).dropna().melt()
+    downreg_true_kinase_quantile_df.columns = ["Method", "Normalized rank"]
+    
+    plt.clf()
+    plt.figure(figsize=[3.5,3])
+    ax = sns.violinplot(
+        data=joined_true_kinase_quantile_df,
+        x='Method',
+        y='Normalized rank',
+        cut=0
+    )
+    ax.set_yticks(np.arange(0, 1.1, 0.1))
+    sns.despine()
+    plt.tight_layout()
+    plt.savefig(f'{out_prefix}hernandez2017_joined_true_kinase_quantile.pdf')
+    
+    plt.clf()
+    plt.figure(figsize=[3.5,3])
+    ax = sns.violinplot(
+        data=upreg_true_kinase_quantile_df,
+        x='Method',
+        y='Normalized rank',
+        cut=0
+    )
+    ax.set_yticks(np.arange(0, 1.1, 0.1))
+    sns.despine()
+    plt.tight_layout()
+    plt.savefig(f'{out_prefix}hernandez2017_upreg_true_kinase_quantile.pdf')
+    
+    plt.clf()
+    plt.figure(figsize=[3.5,3])
+    ax = sns.violinplot(
+        data=downreg_true_kinase_quantile_df,
+        x='Method',
+        y='Normalized rank',
+        cut=0
+    )
+    ax.set_yticks(np.arange(0, 1.1, 0.1))
+    sns.despine()
+    plt.tight_layout()
+    plt.savefig(f'{out_prefix}hernandez2017_downreg_true_kinase_quantile.pdf')
+    ##########
+
     # top 5% score true positives performance
     phosx_top5percentScore, phosx_top5percentScore_total = top5percentScoreFraction(kinase_activity_phosx_df, upregulation_df, metadata_experiments_set)
     kinex_top5percentScore, kinex_top5percentScore_total = top5percentScoreFraction(kinase_activity_kinex_df, upregulation_df, metadata_experiments_set)

@@ -19,8 +19,6 @@ process run_phosx {
     input:
         tuple val(id),
               file('input/input.seqrnk')
-        path 'input/pssm_dict.h5'
-        path 'input/pssm_bg_scores.tsv.gz'
 
     output:
         path "PhosX/${id}.tsv", emit: tsv
