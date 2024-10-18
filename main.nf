@@ -25,6 +25,7 @@ include { parse_hernandez2017_dataset } from './modules/hernandez2017'
 include { translate_hernandez2017_metadata } from './modules/hernandez2017'
 include { hernandez2017_rnk_translate1col_w_dict } from './modules/hernandez2017'
 include { hernandez2017_make_seqrnk } from './modules/hernandez2017'
+include { hernandez2017_make_uniprot_seqrnk } from './modules/hernandez2017'
 include { hernandez2017_make_rnk } from './modules/hernandez2017'
 include { benchmark_phosx_hernandez2017 } from './modules/hernandez2017'
 
@@ -42,6 +43,10 @@ include { run_phosx } from './modules/phosx'
 include { get_kinex_scoring_matrix } from './modules/kinex'
 include { run_kinex } from './modules/kinex'
 
+include { make_kstar_networks } from './modules/kstar'
+include { run_kstar } from './modules/kstar'
+include { translate_kstar_output } from './modules/kstar'
+
 include { run_gsea } from './modules/gsea'
 
 // ===== //
@@ -57,6 +62,7 @@ workflow GET_GENE_ID_DICT {
         uniprot_id_dict
 
 }
+
 
 /*workflow Gene_Synonym__2__Gene_Name {
 
@@ -100,6 +106,7 @@ workflow SER_THR_KINASES_PSSM {
 
 }
 
+
 /*workflow PSP {
 
     take:
@@ -119,6 +126,7 @@ workflow SER_THR_KINASES_PSSM {
         human_phosphosites
 
 }*/
+
 
 workflow PSP {
 
@@ -140,6 +148,7 @@ workflow PSP {
 
 }
 
+
 /*workflow PSSM_BACKGROUND_SCORES {
 
     take:
@@ -158,6 +167,7 @@ workflow PSP {
 
 }*/
 
+
 workflow KINEX_SCORING_MATRIX {
 
     take:
@@ -170,6 +180,7 @@ workflow KINEX_SCORING_MATRIX {
         scoring_matrix
 
 }
+
 
 workflow HERNANDEZ2017_DATASET {
 
@@ -186,6 +197,7 @@ workflow HERNANDEZ2017_DATASET {
         metadata = translate_hernandez2017_metadata( dataset.metadata, geneSynonym2geneName )
         uniprot_rnk = hernandez2017_rnk_translate1col_w_dict( untranslated_rnk, uniprotac2ENSP_dict )
         seqrnk = hernandez2017_make_seqrnk( uniprot_rnk )
+        uniprot_seqrnk = hernandez2017_make_uniprot_seqrnk( uniprot_rnk )
         rnk = hernandez2017_make_rnk( uniprot_rnk )
         publish( Channel.of('datasets/hernandez2017/metadata_translated.tsv').combine(metadata) )
 
@@ -193,9 +205,38 @@ workflow HERNANDEZ2017_DATASET {
         metadata
         uniprot_rnk
         seqrnk
+        uniprot_seqrnk
         rnk
 
 }
+
+
+/*workflow CPTAC_DATASET {
+
+    take:
+        uniprotac2ENSP_dict
+        geneSynonym2geneName
+
+    main:
+        dataset = parse_cptac_dataset()
+        data = split_cptac_samples( dataset.data )
+                    .flatMap()
+                    .map{file -> tuple( file.baseName, file )}
+        rnk = make_cptac_rnk( data )
+        uniprot_rnk = make_cptac_uniprot_rnk( rnk, uniprotac2ENSP_dict )
+        seqrnk = make_cptac_seqrnk( data )
+
+        metadata = translate2col(dataset.metadata, geneSynonym2geneName )
+        publish( Channel.of('datasets/cptac/metadata_translated.tsv').combine(metadata) )
+
+    emit:
+        metadata
+        uniprot_rnk
+        seqrnk
+        rnk
+
+}*/
+
 
 workflow CPTAC_DATASET {
 
@@ -223,6 +264,7 @@ workflow CPTAC_DATASET {
 
 }
 
+
 workflow PHOSX_HERNANDEZ2017 {
 
     take:
@@ -237,6 +279,7 @@ workflow PHOSX_HERNANDEZ2017 {
         phosx_output
 
 }
+
 
 workflow PHOSX_CPTAC {
 
@@ -255,6 +298,7 @@ workflow PHOSX_CPTAC {
 
 }
 
+
 workflow KINEX_HERNANDEZ2017 {
 
     take:
@@ -271,6 +315,7 @@ workflow KINEX_HERNANDEZ2017 {
         kinex_output
 
 }
+
 
 workflow KINEX_CPTAC {
 
@@ -289,6 +334,7 @@ workflow KINEX_CPTAC {
 
 }
 
+
 workflow GSEA_HERNANDEZ2017 {
 
     take:
@@ -305,6 +351,7 @@ workflow GSEA_HERNANDEZ2017 {
 
 }
 
+
 workflow GSEA_CPTAC {
 
     take:
@@ -318,6 +365,26 @@ workflow GSEA_CPTAC {
 
     emit:
         gsea_output
+
+}
+
+
+workflow KSTAR_HERNANDEZ2017{
+
+    take:
+        string_id_dict
+        uniprot_rnk
+
+    main:
+        kstar_networks = make_kstar_networks()
+        kstar_output_untr = run_kstar( uniprot_rnk,
+                                       kstar_networks.st_net,
+                                       kstar_networks.y_net )
+        kstar_output = translate_kstar_output( kstar_output_untr,
+                                               string_id_dict )
+
+    emit:
+        kstar_output
 
 }
 
@@ -337,6 +404,7 @@ workflow BENCHMARK_PHOSX_HERNANDEZ2017 {
 
 }
 
+
 workflow BENCHMARK_PHOSX_CPTAC {
 
     take:
@@ -353,6 +421,7 @@ workflow BENCHMARK_PHOSX_CPTAC {
 
 }
 
+
 workflow PUBLISH_CONFIG {
 
     main:
@@ -362,6 +431,7 @@ workflow PUBLISH_CONFIG {
         publish( val_ch.combine( config_ch ) )
 
 }
+
 
 workflow {
 
@@ -389,7 +459,7 @@ workflow {
                                              ser_thr_kinases_pssm_dict_h5 )*/
 
     scoring_matrix = KINEX_SCORING_MATRIX( string_id_dict )
-    
+
     // get hernandez2017 dataset
     hernandez2017 = HERNANDEZ2017_DATASET( gene_id_dict.uniprotac2ENSP_dict,
                                            string_id_dict )
@@ -405,6 +475,8 @@ workflow {
                                                scoring_matrix )
     gsea_hernandez2017 = GSEA_HERNANDEZ2017( psp_kin_sub_clusters,
                                              hernandez2017.rnk )
+    kstar_hernandez2017 = KSTAR_HERNANDEZ2017( string_id_dict,
+                                               hernandez2017.uniprot_seqrnk )
 
     // run methods on cptac
     /*phosx_cptac = PHOSX_CPTAC( cptac.seqrnk,

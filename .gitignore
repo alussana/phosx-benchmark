@@ -4,3 +4,4 @@ env/*gz
 misc/*.svg.*
 output/
 *.bck
+*.tmp

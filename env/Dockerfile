@@ -24,3 +24,11 @@ RUN cd kinex & pip install --break-system-packages .
 COPY phosx .
 RUN cd phosx & pip install --break-system-packages .
 RUN apt-get install -y r-base
+RUN pip install --break-system-packages kstar
+RUN wget -O KSTAR_graphs.tar.gz https://figshare.com/ndownloader/files/28768155 && \
+        tar -xzf KSTAR_graphs.tar.gz # this creates /NETWORKS/NetworKIN necessary for kstar.config.update_network_directory('/NETWORKS/NetworKIN') in run_kstar.py
+COPY kstar_config.py .
+RUN python kstar_config.py
+RUN chmod -R 755 /usr/local/lib/python3.11/dist-packages/RESOURCE_FILES.tar.gz
+RUN chmod -R 755 /usr/local/lib/python3.11/dist-packages/RESOURCE_FILES
+RUN chmod -R 755 /usr/local/lib/python3.11/dist-packages/kstar

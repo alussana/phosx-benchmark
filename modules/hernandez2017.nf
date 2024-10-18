@@ -146,6 +146,37 @@ process hernandez2017_make_seqrnk {
 
 }
 
+
+/*
+.META: (no header)
+1   UniProt AC
+2   ResPos
+3   sequence    
+2   log2fc
+*/
+process hernandez2017_make_uniprot_seqrnk {
+
+    publishDir "${out_dir}",
+            pattern: "datasets/hernandez2017/uniprot_seqrnk/${id}.seqrnk",
+            mode: 'copy'
+
+    input:
+        tuple val(id), file('input/file.tsv')
+
+    output:
+        tuple val(id), file("datasets/hernandez2017/uniprot_seqrnk/${id}.seqrnk")
+
+    script:
+    """
+    mkdir -p datasets/hernandez2017/uniprot_seqrnk
+
+    hernandez2017_make_uniprot_seqrnk.py \
+        input/file.tsv \
+        > datasets/hernandez2017/uniprot_seqrnk/${id}.seqrnk
+    """
+
+}
+
 /*
 Make the rnk file
 
