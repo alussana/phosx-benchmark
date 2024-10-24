@@ -90,6 +90,7 @@ def main():
     target_file = sys.argv[2]
     field_to_translate = int(sys.argv[3])
 
+    print("\tActivity Score")
     with open(target_file, "r") as target_fh:
         for line in target_fh:
             fields = line.removesuffix("\n").split("\t")

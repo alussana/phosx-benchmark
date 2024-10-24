@@ -382,6 +382,7 @@ workflow KSTAR_HERNANDEZ2017{
                                        kstar_networks.y_net )
         kstar_output = translate_kstar_output( kstar_output_untr,
                                                string_id_dict )
+                            .collect()
 
     emit:
         kstar_output
@@ -394,12 +395,14 @@ workflow BENCHMARK_PHOSX_HERNANDEZ2017 {
         phosx_output
         gsea_output
         kinex_output
+        kstar_output
         metadata
 
     main:
         benchmark_phosx_hernandez2017(phosx_output,
                                       gsea_output,
                                       kinex_output,
+                                      kstar_output,
                                       metadata )
 
 }
@@ -492,6 +495,7 @@ workflow {
     BENCHMARK_PHOSX_HERNANDEZ2017( phosx_hernandez2017,
                                    gsea_hernandez2017,
                                    kinex_hernandez2017,
+                                   kstar_hernandez2017,
                                    hernandez2017.metadata )
 
 

@@ -238,6 +238,7 @@ process benchmark_phosx_hernandez2017 {
         path 'input/phosx/*.tsv'
         path 'input/gsea/*.csv'
         path 'input/kinex/*.tsv'
+        path 'input/kstar/*.tsv'
         path 'input/metadata.tsv'
 
     output:
@@ -256,6 +257,7 @@ process benchmark_phosx_hernandez2017 {
     mkdir -p data/phosx
     mkdir -p data/gsea
     mkdir -p data/kinex
+    mkdir -p data/kstar
 
     for file in \$(ls input/phosx/); do \
         linkpath=\$(readlink -f input/phosx/"\$file"); \
@@ -270,6 +272,7 @@ process benchmark_phosx_hernandez2017 {
 
     cat paths_phosx.txt | sort -g > input_files_phosx.txt
 
+
     for file in \$(ls input/gsea/); do \
         linkpath=\$(readlink -f input/gsea/"\$file"); \
         echo "\$linkpath" >> symlink_paths_gsea.txt; \
@@ -282,6 +285,7 @@ process benchmark_phosx_hernandez2017 {
     done
 
     cat paths_gsea.txt | sort -g > input_files_gsea.txt
+
 
     for file in \$(ls input/kinex/); do \
         linkpath=\$(readlink -f input/kinex/"\$file"); \
@@ -296,6 +300,21 @@ process benchmark_phosx_hernandez2017 {
 
     cat paths_kinex.txt | sort -g > input_files_kinex.txt
 
+
+    for file in \$(ls input/kstar/); do \
+        linkpath=\$(readlink -f input/kstar/"\$file"); \
+        echo "\$linkpath" >> symlink_paths_kstar.txt; \
+    done
+
+    for file in \$(cat symlink_paths_kstar.txt); do \
+        name_dot_tsv=\$(basename "\$file"); \
+        cp \$file data/kstar/\$name_dot_tsv; \
+        echo data/kstar/\$name_dot_tsv >> paths_kstar.txt; \
+    done
+
+    cat paths_kstar.txt | sort -g > input_files_kstar.txt
+
+
     hernandez2017_phosx_kinase_activity_benchmark.py \
         input_files_phosx.txt \
         input_files_gsea.txt \
@@ -308,6 +327,7 @@ process benchmark_phosx_hernandez2017 {
         input_files_phosx.txt \
         input_files_gsea.txt \
         input_files_kinex.txt \
+        input_files_kstar.txt \
         input/metadata.tsv \
         "${params.kinase_activity_metric}" \
         kinase_activity_benchmark/hernandez2017/intersection_s_t/
