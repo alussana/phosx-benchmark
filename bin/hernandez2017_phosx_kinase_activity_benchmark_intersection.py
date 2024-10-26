@@ -223,20 +223,25 @@ def main():
     input_list_gsea_txt = sys.argv[2]
     input_list_kinex_txt = sys.argv[3]
     input_list_kstar_txt = sys.argv[4]
-    metadata_tsv = sys.argv[5]
-    kinase_activity_metric_str = sys.argv[6]
-    out_prefix = sys.argv[7]
+    input_list_ptmsea_txt = sys.argv[5]
+    input_list_zscore_txt = sys.argv[6]
+    metadata_tsv = sys.argv[7]
+    kinase_activity_metric_str = sys.argv[8]
+    out_prefix = sys.argv[9]
     """
     input_list_phosx_txt = 'input_files_phosx.txt'
     input_list_gsea_txt = 'input_files_gsea.txt'
     input_list_kinex_txt = 'input_files_kinex.txt'
     input_list_kstar_txt = 'input_files_kstar.txt'
+    input_list_ptmsea_txt = 'input_files_ptmsea.txt'
+    input_list_zscore_txt = 'input_files_zscore.txt'
     metadata_tsv = 'input/metadata.tsv'
     kinase_activity_metric_str = 'Activity Score'
     out_prefix = 'kinase_activity_benchmark/hernandez2017/intersection_s_t/'
     """
 
     gsea_kinase_activity_metric_str = "NES"
+
 
     # PhosX kinase activity
     # build dictionary (experiment id --> kinase activity table path)
@@ -280,6 +285,7 @@ def main():
     )
     ##########
 
+
     # GSEApy kinase activity
     # build dictionary (experiment id --> kinase activity table path)
     data_path_dict = {}
@@ -317,6 +323,7 @@ def main():
         sep="\t",
     )
     ##########
+
 
     # Kinex kinase activity
     # build dictionary (experiment id --> kinase activity table path)
@@ -360,6 +367,7 @@ def main():
     )
     ##########
 
+
     # kstar kinase activity
     # build dictionary (experiment id --> kinase activity table path)
     data_path_dict = {}
@@ -401,6 +409,93 @@ def main():
         sep="\t",
     )
     ##########
+    
+    
+    # ptmsea kinase activity
+    # build dictionary (experiment id --> kinase activity table path)
+    data_path_dict = {}
+    with open(input_list_ptmsea_txt, "r") as input_list_fh:
+        for line in input_list_fh:
+            data_path_str = line.strip()
+            data_id = os.path.basename(data_path_str)[:-4]
+            data_path_dict[data_id] = data_path_str
+    # build dataframe of kinase activities
+    kinase_activity_ptmsea_df = pd.DataFrame()
+    for data_id in data_path_dict.keys():
+        df = pd.read_csv(data_path_dict[data_id], sep="\t", index_col=0)
+        series = df[kinase_activity_metric_str]
+        series.name = data_id
+        kinase_activity_ptmsea_df = kinase_activity_ptmsea_df.join(series, how="outer")
+    # normalise and scale
+    kinase_activity_ptmsea_df = quantile_normalize(kinase_activity_ptmsea_df)
+    kinase_activity_ptmsea_df = scale_01(kinase_activity_ptmsea_df)
+    # melt
+    kinase_activity_ptmsea_df = pd.melt(
+        kinase_activity_ptmsea_df.assign(index=kinase_activity_ptmsea_df.index),
+        id_vars=["index"],
+    )
+    kinase_activity_ptmsea_df.columns = [
+        "Kinase",
+        "Experiment",
+        "Kinase activity change",
+    ]
+    # remove NAs due to missing phosphosite sequence
+    kinase_activity_ptmsea_df = kinase_activity_ptmsea_df.dropna()
+    # make index
+    kinase_activity_ptmsea_df.index = kinase_activity_ptmsea_df.apply(
+        lambda x: f'{x["Experiment"]}__{x["Kinase"]}', axis=1
+    )
+    kinase_activity_ptmsea_df.to_csv(
+        f"{out_prefix}hernandez2017_kinase_activity_ptmsea.tsv",
+        header=True,
+        index=True,
+        sep="\t",
+    )
+    ##########
+    
+    
+    # zscore kinase activity
+    # build dictionary (experiment id --> kinase activity table path)
+    data_path_dict = {}
+    with open(input_list_zscore_txt, "r") as input_list_fh:
+        for line in input_list_fh:
+            data_path_str = line.strip()
+            data_id = os.path.basename(data_path_str)[:-4]
+            data_path_dict[data_id] = data_path_str
+    # build dataframe of kinase activities
+    kinase_activity_zscore_df = pd.DataFrame()
+    for data_id in data_path_dict.keys():
+        df = pd.read_csv(data_path_dict[data_id], sep="\t", index_col=0)
+        series = df[kinase_activity_metric_str]
+        series.name = data_id
+        kinase_activity_zscore_df = kinase_activity_zscore_df.join(series, how="outer")
+    # normalise and scale
+    kinase_activity_zscore_df = quantile_normalize(kinase_activity_zscore_df)
+    kinase_activity_zscore_df = scale_01(kinase_activity_zscore_df)
+    # melt
+    kinase_activity_zscore_df = pd.melt(
+        kinase_activity_zscore_df.assign(index=kinase_activity_zscore_df.index),
+        id_vars=["index"],
+    )
+    kinase_activity_zscore_df.columns = [
+        "Kinase",
+        "Experiment",
+        "Kinase activity change",
+    ]
+    # remove NAs due to missing phosphosite sequence
+    kinase_activity_zscore_df = kinase_activity_zscore_df.dropna()
+    # make index
+    kinase_activity_zscore_df.index = kinase_activity_zscore_df.apply(
+        lambda x: f'{x["Experiment"]}__{x["Kinase"]}', axis=1
+    )
+    kinase_activity_zscore_df.to_csv(
+        f"{out_prefix}hernandez2017_kinase_activity_zscore.tsv",
+        header=True,
+        index=True,
+        sep="\t",
+    )
+    ##########
+    
 
     # Take only instances for which a kinase activity could be computed by all methods
     intersection_index = list(
@@ -408,11 +503,15 @@ def main():
         .intersection(set(kinase_activity_kinex_df.index))
         .intersection(set(kinase_activity_gsea_df.index))
         .intersection(set(kinase_activity_kstar_df.index))
+        .intersection(set(kinase_activity_ptmsea_df.index))
+        .intersection(set(kinase_activity_zscore_df.index))
     )
     kinase_activity_phosx_df = kinase_activity_phosx_df.loc[intersection_index,]
     kinase_activity_kinex_df = kinase_activity_kinex_df.loc[intersection_index,]
     kinase_activity_gsea_df = kinase_activity_gsea_df.loc[intersection_index,]
     kinase_activity_kstar_df = kinase_activity_kstar_df.loc[intersection_index,]
+    kinase_activity_ptmsea_df = kinase_activity_ptmsea_df.loc[intersection_index,]
+    kinase_activity_zscore_df = kinase_activity_zscore_df.loc[intersection_index,]
 
     # metadata - ground truth kinase regulation
     metadata_df = pd.read_csv(metadata_tsv, sep="\t", index_col=None, header=None)
@@ -476,6 +575,18 @@ def main():
     kstar_downreg_true_kinase_quantile_series = true_kinase_quantile(
         kinase_activity_kstar_df, downregulation_df
     )
+    ptmsea_upreg_true_kinase_quantile_series = true_kinase_quantile(
+        kinase_activity_ptmsea_df, upregulation_df
+    )
+    ptmsea_downreg_true_kinase_quantile_series = true_kinase_quantile(
+        kinase_activity_ptmsea_df, downregulation_df
+    )
+    zscore_upreg_true_kinase_quantile_series = true_kinase_quantile(
+        kinase_activity_zscore_df, upregulation_df
+    )
+    zscore_downreg_true_kinase_quantile_series = true_kinase_quantile(
+        kinase_activity_zscore_df, downregulation_df
+    )
 
     phosx_joined_true_kinase_quantile_series = pd.concat(
         [
@@ -501,6 +612,18 @@ def main():
             kstar_downreg_true_kinase_quantile_series,
         ]
     )
+    ptmsea_joined_true_kinase_quantile_series = pd.concat(
+        [
+            ptmsea_upreg_true_kinase_quantile_series,
+            ptmsea_downreg_true_kinase_quantile_series,
+        ]
+    )
+    zscore_joined_true_kinase_quantile_series = pd.concat(
+        [
+            zscore_upreg_true_kinase_quantile_series,
+            zscore_downreg_true_kinase_quantile_series,
+        ]
+    )
 
     joined_true_kinase_quantile_df = (
         pd.DataFrame(
@@ -509,6 +632,8 @@ def main():
                 "Kinex": kinex_joined_true_kinase_quantile_series,
                 "GSEApy": gsea_joined_true_kinase_quantile_series,
                 "KSTAR": kstar_joined_true_kinase_quantile_series,
+                "PTM-SEA": ptmsea_joined_true_kinase_quantile_series,
+                "Z-score": zscore_joined_true_kinase_quantile_series,
             }
         )
         .dropna()
@@ -522,6 +647,8 @@ def main():
                 "Kinex": kinex_upreg_true_kinase_quantile_series,
                 "GSEApy": gsea_upreg_true_kinase_quantile_series,
                 "KSTAR": kstar_upreg_true_kinase_quantile_series,
+                "PTM-SEA": ptmsea_upreg_true_kinase_quantile_series,
+                "Z-score": zscore_upreg_true_kinase_quantile_series,
             }
         )
         .dropna()
@@ -535,6 +662,8 @@ def main():
                 "Kinex": kinex_downreg_true_kinase_quantile_series,
                 "GSEApy": gsea_downreg_true_kinase_quantile_series,
                 "KSTAR": kstar_downreg_true_kinase_quantile_series,
+                "PTM-SEA": ptmsea_downreg_true_kinase_quantile_series,
+                "Z-score": zscore_downreg_true_kinase_quantile_series,
             }
         )
         .dropna()
@@ -576,6 +705,7 @@ def main():
     plt.savefig(f"{out_prefix}hernandez2017_downreg_true_kinase_quantile.pdf")
     ##########
 
+
     # top 5% score true positives performance
     phosx_top5percentScore, phosx_top5percentScore_total = top5percentScoreFraction(
         kinase_activity_phosx_df, upregulation_df, metadata_experiments_set
@@ -588,6 +718,12 @@ def main():
     )
     kstar_top5percentScore, kstar_top5percentScore_total = top5percentScoreFraction(
         kinase_activity_kstar_df, upregulation_df, metadata_experiments_set
+    )
+    ptmsea_top5percentScore, ptmsea_top5percentScore_total = top5percentScoreFraction(
+        kinase_activity_ptmsea_df, upregulation_df, metadata_experiments_set
+    )
+    zscore_top5percentScore, zscore_top5percentScore_total = top5percentScoreFraction(
+        kinase_activity_zscore_df, upregulation_df, metadata_experiments_set
     )
     phosx_bottom5percentScore, phosx_bottom5percentScore_total = (
         bottom5percentScoreFraction(
@@ -609,6 +745,16 @@ def main():
             kinase_activity_kstar_df, downregulation_df, metadata_experiments_set
         )
     )
+    ptmsea_bottom5percentScore, ptmsea_bottom5percentScore_total = (
+        bottom5percentScoreFraction(
+            kinase_activity_ptmsea_df, downregulation_df, metadata_experiments_set
+        )
+    )
+    zscore_bottom5percentScore, zscore_bottom5percentScore_total = (
+        bottom5percentScoreFraction(
+            kinase_activity_zscore_df, downregulation_df, metadata_experiments_set
+        )
+    )
     ##########
 
     """
@@ -624,7 +770,9 @@ def main():
     kinex_score_total = kinex_top5percentScore_total + kinex_bottom5percentScore_total
     gsea_score_total = gsea_top5percentScore_total + gsea_bottom5percentScore_total
     kstar_score_total = kstar_top5percentScore_total + kstar_bottom5percentScore_total
-
+    ptmsea_score_total = ptmsea_top5percentScore_total + ptmsea_bottom5percentScore_total
+    zscore_score_total = zscore_top5percentScore_total + zscore_bottom5percentScore_total
+    
     tp_percentage_df = pd.DataFrame(
         {
             "Upregulation": [
@@ -632,14 +780,18 @@ def main():
                 kinex_top5percentScore / kinex_score_total,
                 gsea_top5percentScore / gsea_score_total,
                 kstar_top5percentScore / kstar_score_total,
+                ptmsea_top5percentScore / ptmsea_score_total,
+                zscore_top5percentScore / zscore_score_total,
             ],
             "Downregulation": [
                 phosx_bottom5percentScore / phosx_score_total,
                 kinex_bottom5percentScore / kinex_score_total,
                 gsea_bottom5percentScore / gsea_score_total,
                 kstar_bottom5percentScore / kstar_score_total,
+                ptmsea_bottom5percentScore / ptmsea_score_total,
+                zscore_bottom5percentScore / zscore_score_total,
             ],
-            "Method": ["PhosX", "Kinex", "GSEApy", "KSTAR"],
+            "Method": ["PhosX", "Kinex", "GSEApy", "KSTAR", "PTM-SEA", "Z-score"],
         }
     )
 
@@ -675,6 +827,16 @@ def main():
             kinase_activity_kstar_df, upregulation_df, metadata_experiments_set
         )
     )
+    ptmsea_top5percentKinases, ptmsea_top5percentKinases_total = (
+        top5percentKinasesFraction(
+            kinase_activity_ptmsea_df, upregulation_df, metadata_experiments_set
+        )
+    )
+    zscore_top5percentKinases, zscore_top5percentKinases_total = (
+        top5percentKinasesFraction(
+            kinase_activity_zscore_df, upregulation_df, metadata_experiments_set
+        )
+    )
     phosx_bottom5percentKinases, phosx_bottom5percentKinases_total = (
         bottom5percentKinasesFraction(
             kinase_activity_phosx_df, downregulation_df, metadata_experiments_set
@@ -693,6 +855,16 @@ def main():
     kstar_bottom5percentKinases, kstar_bottom5percentKinases_total = (
         bottom5percentKinasesFraction(
             kinase_activity_kstar_df, downregulation_df, metadata_experiments_set
+        )
+    )
+    ptmsea_bottom5percentKinases, ptmsea_bottom5percentKinases_total = (
+        bottom5percentKinasesFraction(
+            kinase_activity_ptmsea_df, downregulation_df, metadata_experiments_set
+        )
+    )
+    zscore_bottom5percentKinases, zscore_bottom5percentKinases_total = (
+        bottom5percentKinasesFraction(
+            kinase_activity_zscore_df, downregulation_df, metadata_experiments_set
         )
     )
     ##########
@@ -718,6 +890,12 @@ def main():
     kstar_kinases_total = (
         kstar_top5percentKinases_total + kstar_bottom5percentKinases_total
     )
+    ptmsea_kinases_total = (
+        ptmsea_top5percentKinases_total + ptmsea_bottom5percentKinases_total
+    )
+    zscore_kinases_total = (
+        zscore_top5percentKinases_total + zscore_bottom5percentKinases_total
+    )
 
     tp_percentage_df = pd.DataFrame(
         {
@@ -726,14 +904,18 @@ def main():
                 kinex_top5percentKinases / kinex_kinases_total,
                 gsea_top5percentKinases / gsea_kinases_total,
                 kstar_top5percentKinases / kstar_kinases_total,
+                ptmsea_top5percentKinases / ptmsea_kinases_total,
+                zscore_top5percentKinases / zscore_kinases_total,
             ],
             "Downregulation": [
                 phosx_bottom5percentKinases / phosx_kinases_total,
                 kinex_bottom5percentKinases / kinex_kinases_total,
                 gsea_bottom5percentKinases / gsea_kinases_total,
                 kstar_bottom5percentKinases / kstar_kinases_total,
+                ptmsea_bottom5percentKinases / ptmsea_kinases_total,
+                zscore_bottom5percentKinases / zscore_kinases_total,
             ],
-            "Method": ["PhosX", "Kinex", "GSEApy", "KSTAR"],
+            "Method": ["PhosX", "Kinex", "GSEApy", "KSTAR", "PTM-SEA", "Z-score"],
         }
     )
 
@@ -1176,6 +1358,217 @@ def main():
     violinplots_joined_df = pd.concat([violinplots_joined_df, data])
     ##########
     
+    
+    # PTM-SEA evaluation
+    upreg_auc_list = []
+    upreg_apr_list = []
+    downreg_auc_list = []
+    downreg_apr_list = []
+    upregulation_ptmsea_positive_indexes_list = list(
+        set(kinase_activity_ptmsea_df.index).intersection(set(upregulation_df.index))
+    )
+    upregulation_ptmsea_negative_indexes_list = [
+        x
+        for x in upregulation_negative_indexes_list
+        if x in kinase_activity_ptmsea_df.index
+    ]
+    downregulation_ptmsea_positive_indexes_list = list(
+        set(kinase_activity_ptmsea_df.index).intersection(set(downregulation_df.index))
+    )
+    downregulation_ptmsea_negative_indexes_list = [
+        x
+        for x in downregulation_negative_indexes_list
+        if x in kinase_activity_ptmsea_df.index
+    ]
+    for i in range(100):
+        # randomly sample neg ex in equal number as the pos ex, for up- and down- regulation separately
+        upreg_neg_idx_list = sample(
+            upregulation_ptmsea_negative_indexes_list,
+            len(upregulation_ptmsea_positive_indexes_list),
+        )
+        downreg_neg_idx_list = sample(
+            downregulation_ptmsea_negative_indexes_list,
+            len(downregulation_ptmsea_positive_indexes_list),
+        )
+
+        # build the evaluation datasets for up- and down- regulation separately
+        upreg_df = kinase_activity_ptmsea_df.loc[
+            upregulation_ptmsea_positive_indexes_list + upreg_neg_idx_list
+        ]
+        downreg_df = kinase_activity_ptmsea_df.loc[
+            downregulation_ptmsea_positive_indexes_list + downreg_neg_idx_list
+        ]
+
+        upreg_df = upreg_df.merge(upregulation_df, how="left")
+        upreg_df["Regulation"].loc[upreg_df["Regulation"].isna()] = 0
+
+        upreg_df.index = upreg_df.apply(
+            lambda x: f'{x["Experiment"]}__{x["Kinase"]}', axis=1
+        )
+
+        downreg_df = downreg_df.merge(downregulation_df, how="left")
+        downreg_df["Regulation"].loc[downreg_df["Regulation"].isna()] = 0
+        downreg_df["Regulation"].loc[downreg_df["Regulation"] == -1] = 1
+
+        downreg_df.index = downreg_df.apply(
+            lambda x: f'{x["Experiment"]}__{x["Kinase"]}', axis=1
+        )
+
+        # upregulation
+        fpr, tpr, thresholds = roc_curve(
+            upreg_df["Regulation"], upreg_df["Kinase activity change"]
+        )
+        upreg_auc_list.append(auc(fpr, tpr))
+        precision, recall, thresholds = precision_recall_curve(
+            upreg_df["Regulation"], upreg_df["Kinase activity change"]
+        )
+        upreg_apr_list.append(auc(recall, precision))
+
+        # downregulation
+        fpr, tpr, thresholds = roc_curve(
+            downreg_df["Regulation"], -downreg_df["Kinase activity change"]
+        )
+        downreg_auc_list.append(auc(fpr, tpr))
+        precision, recall, thresholds = precision_recall_curve(
+            downreg_df["Regulation"], -downreg_df["Kinase activity change"]
+        )
+        downreg_apr_list.append(auc(recall, precision))
+
+    n_upreg_ptmsea = len(upreg_df.loc[upreg_df["Regulation"] == 1])
+    n_downreg_ptmsea = len(downreg_df.loc[downreg_df["Regulation"] == 1])
+
+    data = pd.DataFrame({"AUROC": upreg_auc_list, "AUPR": upreg_apr_list})
+    data = data.melt()
+    data.columns = ["Metric", "Value"]
+    data["Method"] = ["PTM-SEA" for i in range(len(data))]
+
+    violinplots_upreg_df = pd.concat([violinplots_upreg_df, data])
+
+    data = pd.DataFrame({"AUROC": downreg_auc_list, "AUPR": downreg_apr_list})
+    data = data.melt()
+    data.columns = ["Metric", "Value"]
+    data["Method"] = ["PTM-SEA" for i in range(len(data))]
+
+    violinplots_downreg_df = pd.concat([violinplots_downreg_df, data])
+
+    data = pd.DataFrame(
+        {
+            "AUROC": upreg_auc_list + downreg_auc_list,
+            "AUPR": upreg_apr_list + downreg_apr_list,
+        }
+    )
+    data = data.melt()
+    data.columns = ["Metric", "Value"]
+    data["Method"] = ["PTM-SEA" for i in range(len(data))]
+
+    violinplots_joined_df = pd.concat([violinplots_joined_df, data])
+    ##########
+    
+
+    # Z-score evaluation
+    upreg_auc_list = []
+    upreg_apr_list = []
+    downreg_auc_list = []
+    downreg_apr_list = []
+    upregulation_zscore_positive_indexes_list = list(
+        set(kinase_activity_zscore_df.index).intersection(set(upregulation_df.index))
+    )
+    upregulation_zscore_negative_indexes_list = [
+        x
+        for x in upregulation_negative_indexes_list
+        if x in kinase_activity_zscore_df.index
+    ]
+    downregulation_zscore_positive_indexes_list = list(
+        set(kinase_activity_zscore_df.index).intersection(set(downregulation_df.index))
+    )
+    downregulation_zscore_negative_indexes_list = [
+        x
+        for x in downregulation_negative_indexes_list
+        if x in kinase_activity_zscore_df.index
+    ]
+    for i in range(100):
+        # randomly sample neg ex in equal number as the pos ex, for up- and down- regulation separately
+        upreg_neg_idx_list = sample(
+            upregulation_zscore_negative_indexes_list,
+            len(upregulation_zscore_positive_indexes_list),
+        )
+        downreg_neg_idx_list = sample(
+            downregulation_zscore_negative_indexes_list,
+            len(downregulation_zscore_positive_indexes_list),
+        )
+
+        # build the evaluation datasets for up- and down- regulation separately
+        upreg_df = kinase_activity_zscore_df.loc[
+            upregulation_zscore_positive_indexes_list + upreg_neg_idx_list
+        ]
+        downreg_df = kinase_activity_zscore_df.loc[
+            downregulation_zscore_positive_indexes_list + downreg_neg_idx_list
+        ]
+
+        upreg_df = upreg_df.merge(upregulation_df, how="left")
+        upreg_df["Regulation"].loc[upreg_df["Regulation"].isna()] = 0
+
+        upreg_df.index = upreg_df.apply(
+            lambda x: f'{x["Experiment"]}__{x["Kinase"]}', axis=1
+        )
+
+        downreg_df = downreg_df.merge(downregulation_df, how="left")
+        downreg_df["Regulation"].loc[downreg_df["Regulation"].isna()] = 0
+        downreg_df["Regulation"].loc[downreg_df["Regulation"] == -1] = 1
+
+        downreg_df.index = downreg_df.apply(
+            lambda x: f'{x["Experiment"]}__{x["Kinase"]}', axis=1
+        )
+
+        # upregulation
+        fpr, tpr, thresholds = roc_curve(
+            upreg_df["Regulation"], upreg_df["Kinase activity change"]
+        )
+        upreg_auc_list.append(auc(fpr, tpr))
+        precision, recall, thresholds = precision_recall_curve(
+            upreg_df["Regulation"], upreg_df["Kinase activity change"]
+        )
+        upreg_apr_list.append(auc(recall, precision))
+
+        # downregulation
+        fpr, tpr, thresholds = roc_curve(
+            downreg_df["Regulation"], -downreg_df["Kinase activity change"]
+        )
+        downreg_auc_list.append(auc(fpr, tpr))
+        precision, recall, thresholds = precision_recall_curve(
+            downreg_df["Regulation"], -downreg_df["Kinase activity change"]
+        )
+        downreg_apr_list.append(auc(recall, precision))
+
+    n_upreg_zscore = len(upreg_df.loc[upreg_df["Regulation"] == 1])
+    n_downreg_zscore = len(downreg_df.loc[downreg_df["Regulation"] == 1])
+
+    data = pd.DataFrame({"AUROC": upreg_auc_list, "AUPR": upreg_apr_list})
+    data = data.melt()
+    data.columns = ["Metric", "Value"]
+    data["Method"] = ["Z-score" for i in range(len(data))]
+
+    violinplots_upreg_df = pd.concat([violinplots_upreg_df, data])
+
+    data = pd.DataFrame({"AUROC": downreg_auc_list, "AUPR": downreg_apr_list})
+    data = data.melt()
+    data.columns = ["Metric", "Value"]
+    data["Method"] = ["Z-score" for i in range(len(data))]
+
+    violinplots_downreg_df = pd.concat([violinplots_downreg_df, data])
+
+    data = pd.DataFrame(
+        {
+            "AUROC": upreg_auc_list + downreg_auc_list,
+            "AUPR": upreg_apr_list + downreg_apr_list,
+        }
+    )
+    data = data.melt()
+    data.columns = ["Metric", "Value"]
+    data["Method"] = ["Z-score" for i in range(len(data))]
+
+    violinplots_joined_df = pd.concat([violinplots_joined_df, data])
+    ##########
 
 
     plt.clf()
@@ -1273,6 +1666,12 @@ def main():
     kinase_activity_kstar_df = kinase_activity_kstar_df.rename(
         columns={"Kinase activity change": "KSTAR Activity Score"}
     )
+    kinase_activity_ptmsea_df = kinase_activity_ptmsea_df.rename(
+        columns={"Kinase activity change": "PTM-SEA Activity Score"}
+    )
+    kinase_activity_zscore_df = kinase_activity_zscore_df.rename(
+        columns={"Kinase activity change": "Z-score Activity Score"}
+    )
 
     regulated_df = (
         metadata_df.merge(
@@ -1281,6 +1680,8 @@ def main():
         .merge(kinase_activity_gsea_df, on=["Experiment", "Kinase"], how="left")
         .merge(kinase_activity_kinex_df, on=["Experiment", "Kinase"], how="left")
         .merge(kinase_activity_kstar_df, on=["Experiment", "Kinase"], how="left")
+        .merge(kinase_activity_ptmsea_df, on=["Experiment", "Kinase"], how="left")
+        .merge(kinase_activity_zscore_df, on=["Experiment", "Kinase"], how="left")
     )
 
     plt.clf()
@@ -1378,6 +1779,54 @@ def main():
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}hernandez2017_KSTAR_score_regulated_kinases.pdf")
+    
+    plt.clf()
+    plt.figure(figsize=(3.5, 3))
+    plt.ylim([0, 30])
+    sns.histplot(
+        regulated_df["PTM-SEA Activity Score"].loc[regulated_df["Regulation"] == 1],
+        color="red",
+        alpha=0.5,
+        binrange=[0, 1],
+        binwidth=0.05,
+        legend="Upregulated",
+    )
+    sns.histplot(
+        regulated_df["PTM-SEA Activity Score"].loc[regulated_df["Regulation"] == -1],
+        color="blue",
+        alpha=0.5,
+        binrange=[0, 1],
+        binwidth=0.05,
+        legend="Downregulated",
+    )
+    plt.legend(loc="upper left", frameon=False, labels=["Upregulated", "Downregulated"])
+    sns.despine()
+    plt.tight_layout()
+    plt.savefig(f"{out_prefix}hernandez2017_PTM-SEA_score_regulated_kinases.pdf")
+    
+    plt.clf()
+    plt.figure(figsize=(3.5, 3))
+    plt.ylim([0, 30])
+    sns.histplot(
+        regulated_df["Z-score Activity Score"].loc[regulated_df["Regulation"] == 1],
+        color="red",
+        alpha=0.5,
+        binrange=[0, 1],
+        binwidth=0.05,
+        legend="Upregulated",
+    )
+    sns.histplot(
+        regulated_df["Z-score Activity Score"].loc[regulated_df["Regulation"] == -1],
+        color="blue",
+        alpha=0.5,
+        binrange=[0, 1],
+        binwidth=0.05,
+        legend="Downregulated",
+    )
+    plt.legend(loc="upper left", frameon=False, labels=["Upregulated", "Downregulated"])
+    sns.despine()
+    plt.tight_layout()
+    plt.savefig(f"{out_prefix}hernandez2017_Z-score_score_regulated_kinases.pdf")
 
     regulated_df = regulated_df.dropna()
 
@@ -1396,6 +1845,13 @@ def main():
     kstar_fpr, kstar_tpr, kstar_roc_auc = compute_roc(
         regulated_df["Regulation"], regulated_df["KSTAR Activity Score"]
     )
+    ptmsea_fpr, ptmsea_tpr, ptmsea_roc_auc = compute_roc(
+        regulated_df["Regulation"], regulated_df["PTM-SEA Activity Score"]
+    )
+    zscore_fpr, zscore_tpr, zscore_roc_auc = compute_roc(
+        regulated_df["Regulation"], regulated_df["Z-score Activity Score"]
+    )
+    
 
     class_imbalance = n_upregulated / (n_upregulated + n_downregulated)
     if class_imbalance < 0.5:
@@ -1454,6 +1910,13 @@ def main():
     kstar_recall, kstar_precision, kstar_pr_auc = compute_pr(
         regulated_df["Regulation"], regulated_df["KSTAR Activity Score"]
     )
+    ptmsea_recall, ptmsea_precision, ptmsea_pr_auc = compute_pr(
+        regulated_df["Regulation"], regulated_df["PTM-SEA Activity Score"]
+    )
+    zscore_recall, zscore_precision, zscore_pr_auc = compute_pr(
+        regulated_df["Regulation"], regulated_df["Z-score Activity Score"]
+    )
+    
 
     plt.clf()
     plt.figure(figsize=(4, 4))
@@ -1471,6 +1934,12 @@ def main():
     )
     plt.plot(
         kstar_recall, kstar_precision, lw=2, label=f"KSTAR (AUC = {kstar_pr_auc:.2f})"
+    )
+    plt.plot(
+        ptmsea_recall, ptmsea_precision, lw=2, label=f"PTM-SEA (AUC = {ptmsea_pr_auc:.2f})"
+    )
+    plt.plot(
+        zscore_recall, zscore_precision, lw=2, label=f"Z-score (AUC = {zscore_pr_auc:.2f})"
     )
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
@@ -1506,6 +1975,12 @@ def main():
     )
     plt.plot(
         kstar_recall, kstar_precision, lw=2, label=f"KSTAR (AUC = {kstar_pr_auc:.2f})"
+    )
+    plt.plot(
+        ptmsea_recall, ptmsea_precision, lw=2, label=f"PTM-SEA (AUC = {ptmsea_pr_auc:.2f})"
+    )
+    plt.plot(
+        zscore_recall, zscore_precision, lw=2, label=f"Z-score (AUC = {zscore_pr_auc:.2f})"
     )
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])

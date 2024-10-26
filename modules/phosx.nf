@@ -32,7 +32,7 @@ process run_phosx {
 
     #phosx \
         input/input.seqrnk \
-        -n 10000 \
+        -n ${params.phosx_n_perm} \
         -c ${params.n_cores} \
         -stk ${params.phosx_s_t_n_top_kinases} \
         -yk ${params.phosx_y_n_top_kinases} \
@@ -43,11 +43,11 @@ process run_phosx {
 
     phosx \
         input/input.seqrnk \
-        -n 10000 \
+        -n ${params.phosx_n_perm} \
         -c ${params.n_cores} \
         -stk ${params.phosx_s_t_n_top_kinases} \
         -yk ${params.phosx_y_n_top_kinases} \
-        -m ${params.phosx_min_n_hits} \
+        -mh ${params.phosx_min_n_hits} \
         -d PhosX/${id} \
         > PhosX/${id}.tsv
 

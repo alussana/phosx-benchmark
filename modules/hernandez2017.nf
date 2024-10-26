@@ -228,10 +228,10 @@ Compute AUROC and precision. Reapeat 60 times.
 process benchmark_phosx_hernandez2017 {
 
     publishDir "${out_dir}", pattern: "kinase_activity_benchmark/hernandez2017/union/*.pdf", mode: 'copy'
-    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/hernandez2017/intersection_s_t_y/*.pdf", mode: 'copy'
+    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/hernandez2017/intersection/*.pdf", mode: 'copy'
     publishDir "${out_dir}", pattern: "kinase_activity_benchmark/hernandez2017/intersection_s_t/*.pdf", mode: 'copy'
     publishDir "${out_dir}", pattern: "kinase_activity_benchmark/hernandez2017/union/*.tsv", mode: 'copy'
-    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/hernandez2017/intersection_s_t_y/*.tsv", mode: 'copy'
+    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/hernandez2017/intersection/*.tsv", mode: 'copy'
     publishDir "${out_dir}", pattern: "kinase_activity_benchmark/hernandez2017/intersection_s_t/*.tsv", mode: 'copy'
 
     input:
@@ -239,25 +239,29 @@ process benchmark_phosx_hernandez2017 {
         path 'input/gsea/*.csv'
         path 'input/kinex/*.tsv'
         path 'input/kstar/*.tsv'
+        path 'input/ptmsea/*.tsv'
+        path 'input/zscore/*.tsv'
         path 'input/metadata.tsv'
 
     output:
         path "kinase_activity_benchmark/hernandez2017/union/*.pdf"
         path "kinase_activity_benchmark/hernandez2017/union/*.tsv", emit: tsv
-        path "kinase_activity_benchmark/hernandez2017/intersection_s_t_y/*.pdf"
-        path "kinase_activity_benchmark/hernandez2017/intersection_s_t/*.pdf"
+        path "kinase_activity_benchmark/hernandez2017/intersection/*.pdf"
 
     script:
     """
     CACHEBUST=0
 
     mkdir -p kinase_activity_benchmark/hernandez2017/union/
+    mkdir -p kinase_activity_benchmark/hernandez2017/intersection/
     mkdir -p kinase_activity_benchmark/hernandez2017/intersection_s_t_y/
     mkdir -p kinase_activity_benchmark/hernandez2017/intersection_s_t/
     mkdir -p data/phosx
     mkdir -p data/gsea
     mkdir -p data/kinex
     mkdir -p data/kstar
+    mkdir -p data/ptmsea
+    mkdir -p data/zscore
 
     for file in \$(ls input/phosx/); do \
         linkpath=\$(readlink -f input/phosx/"\$file"); \
@@ -315,7 +319,35 @@ process benchmark_phosx_hernandez2017 {
     cat paths_kstar.txt | sort -g > input_files_kstar.txt
 
 
-    hernandez2017_phosx_kinase_activity_benchmark.py \
+    for file in \$(ls input/ptmsea/); do \
+        linkpath=\$(readlink -f input/ptmsea/"\$file"); \
+        echo "\$linkpath" >> symlink_paths_ptmsea.txt; \
+    done
+
+    for file in \$(cat symlink_paths_ptmsea.txt); do \
+        name_dot_tsv=\$(basename "\$file"); \
+        cp \$file data/ptmsea/\$name_dot_tsv; \
+        echo data/ptmsea/\$name_dot_tsv >> paths_ptmsea.txt; \
+    done
+
+    cat paths_ptmsea.txt | sort -g > input_files_ptmsea.txt
+
+
+    for file in \$(ls input/zscore/); do \
+        linkpath=\$(readlink -f input/zscore/"\$file"); \
+        echo "\$linkpath" >> symlink_paths_zscore.txt; \
+    done
+
+    for file in \$(cat symlink_paths_zscore.txt); do \
+        name_dot_tsv=\$(basename "\$file"); \
+        cp \$file data/zscore/\$name_dot_tsv; \
+        echo data/zscore/\$name_dot_tsv >> paths_zscore.txt; \
+    done
+
+    cat paths_zscore.txt | sort -g > input_files_zscore.txt
+
+
+    #hernandez2017_phosx_kinase_activity_benchmark.py \
         input_files_phosx.txt \
         input_files_gsea.txt \
         input_files_kinex.txt \
@@ -328,11 +360,13 @@ process benchmark_phosx_hernandez2017 {
         input_files_gsea.txt \
         input_files_kinex.txt \
         input_files_kstar.txt \
+        input_files_ptmsea.txt \
+        input_files_zscore.txt \
         input/metadata.tsv \
         "${params.kinase_activity_metric}" \
-        kinase_activity_benchmark/hernandez2017/intersection_s_t/
+        kinase_activity_benchmark/hernandez2017/intersection/
 
-    hernandez2017_phosx_kinase_activity_benchmark_tyr_intersection.py \
+    #hernandez2017_phosx_kinase_activity_benchmark_tyr_intersection.py \
         input_files_phosx.txt \
         input_files_gsea.txt \
         input/metadata.tsv \
@@ -345,6 +379,9 @@ process benchmark_phosx_hernandez2017 {
         input/metadata.tsv \
         "${params.kinase_activity_metric}" \
         kinase_activity_benchmark/hernandez2017/intersection_y/
+
+    touch kinase_activity_benchmark/hernandez2017/union/phony.pdf
+    touch kinase_activity_benchmark/hernandez2017/union/phony.tsv
     """
 
 }

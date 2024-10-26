@@ -187,6 +187,39 @@ process make_cptac_uniprot_rnk {
 }
 
 
+/*
+.META: (no header)
+1   UniProt AC
+2   ResPos
+3   sequence    
+2   log2fc
+*/
+process make_cptac_uniprot_seqrnk {
+
+    publishDir "${out_dir}",
+            pattern: "datasets/cptac/uniprot_seqrnk/${id}.seqrnk",
+            mode: 'copy'
+
+    input:
+        tuple val(id), file('input/file.tsv')
+
+    output:
+        tuple val(id), file("datasets/cptac/uniprot_seqrnk/${id}.seqrnk")
+
+    script:
+    """
+    mkdir -p datasets/cptac/uniprot_seqrnk
+
+    cat input/file.tsv | tr '_' '\\t' > file.tsv
+
+    cptac_make_uniprot_seqrnk.py \
+        file.tsv \
+        > datasets/cptac/uniprot_seqrnk/${id}.seqrnk
+    """
+
+}
+
+
 // ===========
 // TODO:
 
@@ -304,6 +337,34 @@ process cptac_make_rnk {
     """
 
 }
+
+
+/*
+translate all the words in the second field of input/file.tsv 
+specified in the first tab-separated column of input/dict.tsv
+with the corresponding word found in the second column
+
+don't discard untranslated rows
+*/
+process translate_cptac_metadata {
+
+    input:
+        path 'input/file.tsv'
+        path 'input/dict.tsv.gz'
+
+    output:
+        path 'translated_file.tsv'
+
+    script:
+    """
+    translate_cptac_metadata.py \
+        input/dict.tsv.gz \
+        input/file.tsv \
+        > translated_file.tsv
+    """
+
+}
+
 
 /*
 compute and plot distributions of auroc and precision at recall 50%, with the
