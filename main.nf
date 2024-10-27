@@ -528,12 +528,18 @@ workflow BENCHMARK_PHOSX_CPTAC {
         phosx_output
         gsea_output
         kinex_output
+        kstar_output
+        ptmsea_output
+        zscore_output
         metadata
 
     main:
         benchmark_phosx_cptac(phosx_output,
                               gsea_output,
                               kinex_output,
+                              kstar_output,
+                              ptmsea_output,
+                              zscore_output,
                               metadata )
 
 }
@@ -632,13 +638,13 @@ workflow {
 
 
     // performance comparison on cptac
-    /*BENCHMARK_PHOSX_CPTAC( phosx_cptac,
+    BENCHMARK_PHOSX_CPTAC( phosx_cptac,
                            gsea_cptac,
                            kinex_cptac,
                            kstar_cptac,
                            ptmsea_cptac,
                            zscore_cptac,
-                           cptac.metadata )*/
+                           cptac.metadata )
 
     PUBLISH_CONFIG()
 

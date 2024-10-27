@@ -242,7 +242,6 @@ def main():
 
     gsea_kinase_activity_metric_str = "NES"
 
-
     # PhosX kinase activity
     # build dictionary (experiment id --> kinase activity table path)
     data_path_dict = {}
@@ -285,7 +284,6 @@ def main():
     )
     ##########
 
-
     # GSEApy kinase activity
     # build dictionary (experiment id --> kinase activity table path)
     data_path_dict = {}
@@ -323,7 +321,6 @@ def main():
         sep="\t",
     )
     ##########
-
 
     # Kinex kinase activity
     # build dictionary (experiment id --> kinase activity table path)
@@ -367,7 +364,6 @@ def main():
     )
     ##########
 
-
     # kstar kinase activity
     # build dictionary (experiment id --> kinase activity table path)
     data_path_dict = {}
@@ -409,8 +405,7 @@ def main():
         sep="\t",
     )
     ##########
-    
-    
+
     # ptmsea kinase activity
     # build dictionary (experiment id --> kinase activity table path)
     data_path_dict = {}
@@ -452,8 +447,7 @@ def main():
         sep="\t",
     )
     ##########
-    
-    
+
     # zscore kinase activity
     # build dictionary (experiment id --> kinase activity table path)
     data_path_dict = {}
@@ -495,7 +489,6 @@ def main():
         sep="\t",
     )
     ##########
-    
 
     # Take only instances for which a kinase activity could be computed by all methods
     intersection_index = list(
@@ -674,8 +667,11 @@ def main():
     plt.clf()
     plt.figure(figsize=[4, 3])
     ax = sns.violinplot(
-        data=joined_true_kinase_quantile_df, x="Method", y="Normalized rank", cut=0,
-        hue="Method"
+        data=joined_true_kinase_quantile_df,
+        x="Method",
+        y="Normalized rank",
+        cut=0,
+        hue="Method",
     )
     ax.set_yticks(np.arange(0, 1.1, 0.1))
     sns.despine()
@@ -685,8 +681,11 @@ def main():
     plt.clf()
     plt.figure(figsize=[4, 3])
     ax = sns.violinplot(
-        data=upreg_true_kinase_quantile_df, x="Method", y="Normalized rank", cut=0,
-        hue="Method"
+        data=upreg_true_kinase_quantile_df,
+        x="Method",
+        y="Normalized rank",
+        cut=0,
+        hue="Method",
     )
     ax.set_yticks(np.arange(0, 1.1, 0.1))
     sns.despine()
@@ -696,15 +695,17 @@ def main():
     plt.clf()
     plt.figure(figsize=[4, 3])
     ax = sns.violinplot(
-        data=downreg_true_kinase_quantile_df, x="Method", y="Normalized rank", cut=0,
-        hue="Method"
+        data=downreg_true_kinase_quantile_df,
+        x="Method",
+        y="Normalized rank",
+        cut=0,
+        hue="Method",
     )
     ax.set_yticks(np.arange(0, 1.1, 0.1))
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}hernandez2017_downreg_true_kinase_quantile.pdf")
     ##########
-
 
     # top 5% score true positives performance
     phosx_top5percentScore, phosx_top5percentScore_total = top5percentScoreFraction(
@@ -770,9 +771,13 @@ def main():
     kinex_score_total = kinex_top5percentScore_total + kinex_bottom5percentScore_total
     gsea_score_total = gsea_top5percentScore_total + gsea_bottom5percentScore_total
     kstar_score_total = kstar_top5percentScore_total + kstar_bottom5percentScore_total
-    ptmsea_score_total = ptmsea_top5percentScore_total + ptmsea_bottom5percentScore_total
-    zscore_score_total = zscore_top5percentScore_total + zscore_bottom5percentScore_total
-    
+    ptmsea_score_total = (
+        ptmsea_top5percentScore_total + ptmsea_bottom5percentScore_total
+    )
+    zscore_score_total = (
+        zscore_top5percentScore_total + zscore_bottom5percentScore_total
+    )
+
     tp_percentage_df = pd.DataFrame(
         {
             "Upregulation": [
@@ -1251,8 +1256,7 @@ def main():
 
     violinplots_joined_df = pd.concat([violinplots_joined_df, data])
     ##########
-    
-    
+
     # KSTAR evaluation
     upreg_auc_list = []
     upreg_apr_list = []
@@ -1357,8 +1361,7 @@ def main():
 
     violinplots_joined_df = pd.concat([violinplots_joined_df, data])
     ##########
-    
-    
+
     # PTM-SEA evaluation
     upreg_auc_list = []
     upreg_apr_list = []
@@ -1463,7 +1466,6 @@ def main():
 
     violinplots_joined_df = pd.concat([violinplots_joined_df, data])
     ##########
-    
 
     # Z-score evaluation
     upreg_auc_list = []
@@ -1569,7 +1571,6 @@ def main():
 
     violinplots_joined_df = pd.concat([violinplots_joined_df, data])
     ##########
-
 
     plt.clf()
     plt.figure(figsize=[4, 4])
@@ -1755,7 +1756,7 @@ def main():
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}hernandez2017_Kinex_score_regulated_kinases.pdf")
-    
+
     plt.clf()
     plt.figure(figsize=(3.5, 3))
     plt.ylim([0, 30])
@@ -1779,7 +1780,7 @@ def main():
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}hernandez2017_KSTAR_score_regulated_kinases.pdf")
-    
+
     plt.clf()
     plt.figure(figsize=(3.5, 3))
     plt.ylim([0, 30])
@@ -1803,7 +1804,7 @@ def main():
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}hernandez2017_PTM-SEA_score_regulated_kinases.pdf")
-    
+
     plt.clf()
     plt.figure(figsize=(3.5, 3))
     plt.ylim([0, 30])
@@ -1851,7 +1852,6 @@ def main():
     zscore_fpr, zscore_tpr, zscore_roc_auc = compute_roc(
         regulated_df["Regulation"], regulated_df["Z-score Activity Score"]
     )
-    
 
     class_imbalance = n_upregulated / (n_upregulated + n_downregulated)
     if class_imbalance < 0.5:
@@ -1916,7 +1916,6 @@ def main():
     zscore_recall, zscore_precision, zscore_pr_auc = compute_pr(
         regulated_df["Regulation"], regulated_df["Z-score Activity Score"]
     )
-    
 
     plt.clf()
     plt.figure(figsize=(4, 4))
@@ -1936,10 +1935,16 @@ def main():
         kstar_recall, kstar_precision, lw=2, label=f"KSTAR (AUC = {kstar_pr_auc:.2f})"
     )
     plt.plot(
-        ptmsea_recall, ptmsea_precision, lw=2, label=f"PTM-SEA (AUC = {ptmsea_pr_auc:.2f})"
+        ptmsea_recall,
+        ptmsea_precision,
+        lw=2,
+        label=f"PTM-SEA (AUC = {ptmsea_pr_auc:.2f})",
     )
     plt.plot(
-        zscore_recall, zscore_precision, lw=2, label=f"Z-score (AUC = {zscore_pr_auc:.2f})"
+        zscore_recall,
+        zscore_precision,
+        lw=2,
+        label=f"Z-score (AUC = {zscore_pr_auc:.2f})",
     )
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
@@ -1977,10 +1982,16 @@ def main():
         kstar_recall, kstar_precision, lw=2, label=f"KSTAR (AUC = {kstar_pr_auc:.2f})"
     )
     plt.plot(
-        ptmsea_recall, ptmsea_precision, lw=2, label=f"PTM-SEA (AUC = {ptmsea_pr_auc:.2f})"
+        ptmsea_recall,
+        ptmsea_precision,
+        lw=2,
+        label=f"PTM-SEA (AUC = {ptmsea_pr_auc:.2f})",
     )
     plt.plot(
-        zscore_recall, zscore_precision, lw=2, label=f"Z-score (AUC = {zscore_pr_auc:.2f})"
+        zscore_recall,
+        zscore_precision,
+        lw=2,
+        label=f"Z-score (AUC = {zscore_pr_auc:.2f})",
     )
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])

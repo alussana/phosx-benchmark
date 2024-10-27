@@ -222,17 +222,12 @@ same procedure as in Hernandez2017
 <https://doi.org/10.1093/bioinformatics/btx082>
 i.e. take positive kinase-condition pairs, create negative set by drawing the
 same number of random  combinations of kinase-conditions pairs that are not in the positive set.
-Compute AUROC and precision. Reapeat 60 times.
-
+Compute AUROC and AUPR. Reapeat 100 times.
+[...]
 */
 process benchmark_phosx_hernandez2017 {
 
-    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/hernandez2017/union/*.pdf", mode: 'copy'
-    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/hernandez2017/intersection/*.pdf", mode: 'copy'
-    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/hernandez2017/intersection_s_t/*.pdf", mode: 'copy'
-    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/hernandez2017/union/*.tsv", mode: 'copy'
-    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/hernandez2017/intersection/*.tsv", mode: 'copy'
-    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/hernandez2017/intersection_s_t/*.tsv", mode: 'copy'
+    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/hernandez2017/pairwise/*.pdf", mode: 'copy'
 
     input:
         path 'input/phosx/*.tsv'
@@ -244,18 +239,11 @@ process benchmark_phosx_hernandez2017 {
         path 'input/metadata.tsv'
 
     output:
-        path "kinase_activity_benchmark/hernandez2017/union/*.pdf"
-        path "kinase_activity_benchmark/hernandez2017/union/*.tsv", emit: tsv
-        path "kinase_activity_benchmark/hernandez2017/intersection/*.pdf"
+        path "kinase_activity_benchmark/hernandez2017/pairwise/*.pdf"
 
     script:
     """
-    CACHEBUST=0
-
-    mkdir -p kinase_activity_benchmark/hernandez2017/union/
-    mkdir -p kinase_activity_benchmark/hernandez2017/intersection/
-    mkdir -p kinase_activity_benchmark/hernandez2017/intersection_s_t_y/
-    mkdir -p kinase_activity_benchmark/hernandez2017/intersection_s_t/
+    mkdir -p kinase_activity_benchmark/hernandez2017/pairwise/
     mkdir -p data/phosx
     mkdir -p data/gsea
     mkdir -p data/kinex
@@ -347,15 +335,7 @@ process benchmark_phosx_hernandez2017 {
     cat paths_zscore.txt | sort -g > input_files_zscore.txt
 
 
-    #hernandez2017_phosx_kinase_activity_benchmark.py \
-        input_files_phosx.txt \
-        input_files_gsea.txt \
-        input_files_kinex.txt \
-        input/metadata.tsv \
-        "${params.kinase_activity_metric}" \
-        kinase_activity_benchmark/hernandez2017/union/
-
-    hernandez2017_phosx_kinase_activity_benchmark_intersection.py \
+    hernandez2017_phosx_kinase_activity_benchmark_pairwise.py \
         input_files_phosx.txt \
         input_files_gsea.txt \
         input_files_kinex.txt \
@@ -364,24 +344,7 @@ process benchmark_phosx_hernandez2017 {
         input_files_zscore.txt \
         input/metadata.tsv \
         "${params.kinase_activity_metric}" \
-        kinase_activity_benchmark/hernandez2017/intersection/
-
-    #hernandez2017_phosx_kinase_activity_benchmark_tyr_intersection.py \
-        input_files_phosx.txt \
-        input_files_gsea.txt \
-        input/metadata.tsv \
-        "${params.kinase_activity_metric}" \
-        kinase_activity_benchmark/hernandez2017/intersection_s_t_y/
-
-    #hernandez2017_phosx_kinase_activity_benchmark_tyronly_intersection.py \
-        input_files_phosx.txt \
-        input_files_gsea.txt \
-        input/metadata.tsv \
-        "${params.kinase_activity_metric}" \
-        kinase_activity_benchmark/hernandez2017/intersection_y/
-
-    touch kinase_activity_benchmark/hernandez2017/union/phony.pdf
-    touch kinase_activity_benchmark/hernandez2017/union/phony.tsv
+        kinase_activity_benchmark/hernandez2017/pairwise/
     """
 
 }
