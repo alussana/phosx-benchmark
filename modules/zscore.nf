@@ -62,7 +62,10 @@ process zscore_cptac {
     for type in \$(cat cptac_types.txt); do \
         cat 03_activity_scores/zscore/cptac/\${type}.tsv | cut -f3 | sort | uniq > \${type}_cond.txt; \
         for cond in \$(cat \${type}_cond.txt); do \
-            cat 03_activity_scores/zscore/cptac/\${type}.tsv | grep -w \${cond} > Z-score/untranslated/\${cond}.tsv; \
+            cat 03_activity_scores/zscore/cptac/\${type}.tsv \
+            | grep -w \${cond} \
+            | cut -f2,4 \
+            > Z-score/untranslated/\${cond}.tsv; \
         done; \
     done
     """

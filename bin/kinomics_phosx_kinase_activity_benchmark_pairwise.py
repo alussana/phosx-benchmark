@@ -258,12 +258,12 @@ def make_kinase_activity_df(
     kinase_activity_df.index = kinase_activity_df.apply(
         lambda x: f'{x["Experiment"]}__{x["Kinase"]}', axis=1
     )
-    #kinase_activity_df.to_csv(
-    #    f"{out_prefix}cptac_kinase_activity_{method_name}.tsv",
-    #    header=True,
-    #    index=True,
-    #    sep="\t",
-    #)
+    kinase_activity_df.to_csv(
+        f"{out_prefix}kinomics_kinase_activity_{method_name}.tsv",
+        header=True,
+        index=True,
+        sep="\t",
+    )
     return kinase_activity_df
 
 
@@ -285,18 +285,18 @@ def pairwise_comparison(
     # make sets of indexes for positive and negative examples in upregulation and downregulation, separately
     upregulation_df = metadata_df.loc[metadata_df["Regulation"] == 1]
     downregulation_df = metadata_df.loc[metadata_df["Regulation"] == -1]
-    #upregulation_df.to_csv(
-    #    f"{out_prefix}cptac_{method_1_name}_{method_2_name}_upregulated.tsv",
-    #    header=True,
-    #    index=True,
-    #    sep="\t"
-    #)
-    #downregulation_df.to_csv(
-    #    f"{out_prefix}cptac_{method_1_name}_{method_2_name}_downregulated.tsv",
-    #    header=True,
-    #    index=True,
-    #    sep="\t",
-    #)
+    upregulation_df.to_csv(
+        f"{out_prefix}kinomics_{method_1_name}_{method_2_name}_upregulated.tsv",
+        header=True,
+        index=True,
+        sep="\t"
+    )
+    downregulation_df.to_csv(
+        f"{out_prefix}kinomics_{method_1_name}_{method_2_name}_downregulated.tsv",
+        header=True,
+        index=True,
+        sep="\t",
+    )
     metadata_kinases_set = set(metadata_df["Kinase"].unique())
     metadata_experiments_set = set(metadata_df["Experiment"].unique())
     possible_indexes_list = list(
@@ -379,7 +379,7 @@ def pairwise_comparison(
     #ax.set_yticks(np.arange(0, 1.1, 0.1))
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_joined_true_kinase_quantile.pdf")
+    plt.savefig(f"{out_prefix}kinomics_{method_1_name}_{method_2_name}_joined_true_kinase_quantile.pdf")
     plt.clf()
     plt.figure(figsize=[3, 3])
     ax = sns.violinplot(
@@ -392,7 +392,7 @@ def pairwise_comparison(
     #ax.set_yticks(np.arange(0, 1.1, 0.1))
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_upreg_true_kinase_quantile.pdf")
+    plt.savefig(f"{out_prefix}kinomics_{method_1_name}_{method_2_name}_upreg_true_kinase_quantile.pdf")
     plt.clf()
     plt.figure(figsize=[3, 3])
     ax = sns.violinplot(
@@ -405,7 +405,7 @@ def pairwise_comparison(
     #ax.set_yticks(np.arange(0, 1.1, 0.1))
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_downreg_true_kinase_quantile.pdf")
+    plt.savefig(f"{out_prefix}kinomics_{method_1_name}_{method_2_name}_downreg_true_kinase_quantile.pdf")
     # top 5% score true positives performance
     method_1_top5percentScore, method_1_top5percentScore_total = top5percentScoreFraction(
         kinase_activity_method_1_df, upregulation_df, metadata_experiments_set
@@ -449,7 +449,7 @@ def pairwise_comparison(
     ax.set_ylabel("Fraction of regulated kinases")
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_topNpercentScore_stacked_barplot.pdf")
+    plt.savefig(f"{out_prefix}kinomics_{method_1_name}_{method_2_name}_topNpercentScore_stacked_barplot.pdf")
     # top 5% kinases true positives performance
     method_1_top5percentKinases, method_1_top5percentKinases_total = (
         top5percentKinasesFraction(
@@ -501,7 +501,7 @@ def pairwise_comparison(
     ax.set_ylabel("Fraction of regulated kinases")
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_topNpercentKinases_stacked_barplot.pdf")
+    plt.savefig(f"{out_prefix}kinomics_{method_1_name}_{method_2_name}_topNpercentKinases_stacked_barplot.pdf")
     # AUROC and AUPR method 1 evaluation 
     violinplots_upreg_df = pd.DataFrame()
     violinplots_downreg_df = pd.DataFrame()
@@ -696,7 +696,7 @@ def pairwise_comparison(
     plt.legend(loc="lower right", frameon=False)
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_upreg_auc_prc_violinplots_w_title.pdf")
+    plt.savefig(f"{out_prefix}kinomics_{method_1_name}_{method_2_name}_upreg_auc_prc_violinplots_w_title.pdf")
     plt.clf()
     plt.figure(figsize=[3, 3])
     ax = sns.violinplot(
@@ -710,7 +710,7 @@ def pairwise_comparison(
     plt.legend(loc="lower right", frameon=False)
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_downreg_auc_prc_violinplots_w_title.pdf")
+    plt.savefig(f"{out_prefix}kinomics_{method_1_name}_{method_2_name}_downreg_auc_prc_violinplots_w_title.pdf")
     plt.clf()
     plt.figure(figsize=[3, 3])
     ax = sns.violinplot(
@@ -724,7 +724,7 @@ def pairwise_comparison(
     plt.legend(loc="lower right", frameon=False)
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_joined_auc_prc_violinplots_w_title.pdf")
+    plt.savefig(f"{out_prefix}kinomics_{method_1_name}_{method_2_name}_joined_auc_prc_violinplots_w_title.pdf")
     plt.clf()
     plt.figure(figsize=[3, 3])
     ax = sns.violinplot(
@@ -735,7 +735,8 @@ def pairwise_comparison(
     plt.legend(loc="lower right", frameon=False)
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_upreg_auc_prc_violinplots.pdf")
+    plt.savefig(f"{out_prefix}kinomics_{method_1_name}_{method_2_name}_upreg_auc_prc_violinplots.pdf")
+
     plt.clf()
     plt.figure(figsize=[3, 3])
     ax = sns.violinplot(
@@ -746,7 +747,7 @@ def pairwise_comparison(
     plt.legend(loc="lower right", frameon=False)
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_downreg_auc_prc_violinplots.pdf")
+    plt.savefig(f"{out_prefix}kinomics_{method_1_name}_{method_2_name}_downreg_auc_prc_violinplots.pdf")
     plt.clf()
     plt.figure(figsize=[3, 3])
     ax = sns.violinplot(
@@ -757,7 +758,7 @@ def pairwise_comparison(
     plt.legend(loc="lower right", frameon=False)
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_joined_auc_prc_violinplots.pdf")
+    plt.savefig(f"{out_prefix}kinomics_{method_1_name}_{method_2_name}_joined_auc_prc_violinplots.pdf")
     # Upregulated and Downregulated subset comparisons
     kinase_activity_method_1_df = kinase_activity_method_1_df.rename(
         columns={"Kinase activity change": f"{method_1_name} Activity Score"}
@@ -793,7 +794,7 @@ def pairwise_comparison(
     plt.legend(loc="upper left", frameon=False, labels=["Upregulated", "Downregulated"])
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_score_regulated_kinases.pdf")
+    plt.savefig(f"{out_prefix}kinomics_{method_1_name}_score_regulated_kinases.pdf")
     plt.clf()
     plt.figure(figsize=(3, 3))
     plt.ylim([0, 30])
@@ -816,7 +817,7 @@ def pairwise_comparison(
     plt.legend(loc="upper left", frameon=False, labels=["Upregulated", "Downregulated"])
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_2_name}_score_regulated_kinases.pdf")
+    plt.savefig(f"{out_prefix}kinomics_{method_2_name}_score_regulated_kinases.pdf")
     regulated_df = regulated_df.dropna()
     n_upregulated = len(regulated_df.loc[regulated_df["Regulation"] == 1])
     n_downregulated = len(regulated_df.loc[regulated_df["Regulation"] == -1])
@@ -844,7 +845,7 @@ def pairwise_comparison(
     )
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_regulated_kinases_ROC_w_title.pdf")
+    plt.savefig(f"{out_prefix}kinomics_{method_1_name}_{method_2_name}_regulated_kinases_ROC_w_title.pdf")
     plt.clf()
     plt.figure(figsize=(3.5, 3))
     plt.plot(method_1_fpr, method_1_tpr, lw=2, label=f"{method_1_name} (AUC = {method_1_roc_auc:.2f})")
@@ -857,7 +858,7 @@ def pairwise_comparison(
     plt.legend(loc="lower right", frameon=False)
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_regulated_kinases_ROC.pdf")
+    plt.savefig(f"{out_prefix}kinomics_{method_1_name}_{method_2_name}_regulated_kinases_ROC.pdf")
     method_1_recall, method_1_precision, method_1_pr_auc = compute_pr(
         regulated_df["Regulation"], regulated_df[f"{method_1_name} Activity Score"]
     )
@@ -888,7 +889,7 @@ def pairwise_comparison(
     )
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_regulated_kinases_PR_w_title.pdf")
+    plt.savefig(f"{out_prefix}kinomics_{method_1_name}_{method_2_name}_regulated_kinases_PR_w_title.pdf")
     plt.clf()
     plt.figure(figsize=(3.5, 3))
     plt.plot(
@@ -910,15 +911,13 @@ def pairwise_comparison(
     plt.legend(loc="lower left", frameon=False)
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_regulated_kinases_PR.pdf")
+    plt.savefig(f"{out_prefix}kinomics_{method_1_name}_{method_2_name}_regulated_kinases_PR.pdf")
 
 def main():
     input_list_phosx_txt = sys.argv[1]
     input_list_gsea_txt = sys.argv[2]
     input_list_kinex_txt = sys.argv[3]
     input_list_kstar_txt = sys.argv[4]
-    input_list_ptmsea_txt = sys.argv[5]
-    input_list_zscore_txt = sys.argv[6]
     metadata_tsv = sys.argv[7]
     kinase_activity_metric_str = sys.argv[8]
     out_prefix = sys.argv[9]
@@ -927,11 +926,9 @@ def main():
     input_list_gsea_txt = 'input_files_gsea.txt'
     input_list_kinex_txt = 'input_files_kinex.txt'
     input_list_kstar_txt = 'input_files_kstar.txt'
-    input_list_ptmsea_txt = 'input_files_ptmsea.txt'
-    input_list_zscore_txt = 'input_files_zscore.txt'
     metadata_tsv = 'input/metadata.tsv'
     kinase_activity_metric_str = 'Activity Score'
-    out_prefix = 'kinase_activity_benchmark/cptac/pairwise/'
+    out_prefix = 'kinase_activity_benchmark/kinomics/intersection/'
     """
     
     
@@ -980,24 +977,6 @@ def main():
         out_prefix,
     )
     
-
-    # PTM-SEA kinase activity
-    kinase_activity_ptmsea_df = make_kinase_activity_df(
-        "PTM-SEA",
-        input_list_ptmsea_txt,
-        kinase_activity_metric_str,
-        out_prefix,
-    )
-    
-
-    # Z-score kinase activity
-    kinase_activity_zscore_df = make_kinase_activity_df(
-        "Z-score",
-        input_list_zscore_txt,
-        kinase_activity_metric_str,
-        out_prefix,
-    )
-    
     
     # Pairwise comparisons: PhosX vs <method>
     pairwise_comparison(
@@ -1021,22 +1000,6 @@ def main():
         kinase_activity_phosx_df,
         "KSTAR",
         kinase_activity_kstar_df,
-        metadata_df,
-        out_prefix,
-    )
-    pairwise_comparison(
-        "PhosX",
-        kinase_activity_phosx_df,
-        "PTM-SEA",
-        kinase_activity_ptmsea_df,
-        metadata_df,
-        out_prefix,
-    )
-    pairwise_comparison(
-        "PhosX",
-        kinase_activity_phosx_df,
-        "Z-score",
-        kinase_activity_zscore_df,
         metadata_df,
         out_prefix,
     )
