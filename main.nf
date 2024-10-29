@@ -56,6 +56,7 @@ include { run_kinex } from './modules/kinex'
 
 include { make_kstar_networks } from './modules/kstar'
 include { run_kstar } from './modules/kstar'
+include { run_kstar_tolerant } from './modules/kstar'
 include { translate_kstar_output } from './modules/kstar'
 
 include { run_gsea } from './modules/gsea'
@@ -351,7 +352,7 @@ workflow KINOMICS_DATASET {
         vemurafenib_metadata
 
     main:
-        seqrnk = tremetinib_seqrnk.concat( vemurafenib_seqrnk ).view()
+        seqrnk = tremetinib_seqrnk.concat( vemurafenib_seqrnk )
         uniprot_seqrnk = tremetinib_uniprot_seqrnk.concat( vemurafenib_uniprot_seqrnk )
         rnk = tremetinib_rnk.concat( vemurafenib_rnk )
         metadata = join_kinomics_metadata( tremetinib_metadata, vemurafenib_metadata)
@@ -568,9 +569,9 @@ workflow KSTAR_KINOMICS{
 
     main:
         kstar_networks = make_kstar_networks()
-        kstar_output_untr = run_kstar( uniprot_rnk,
-                                       kstar_networks.st_net,
-                                       kstar_networks.y_net )
+        kstar_output_untr = run_kstar_tolerant( uniprot_rnk,
+                                                kstar_networks.st_net,
+                                                kstar_networks.y_net )
         kstar_output = translate_kstar_output( kstar_output_untr,
                                                string_id_dict )
                             .collect()
@@ -774,8 +775,8 @@ workflow {
 
 
     // get cptac dataset
-    /*cptac = CPTAC_DATASET( gene_id_dict.uniprotac2ENSP_dict,
-                           string_id_dict )*/
+    cptac = CPTAC_DATASET( gene_id_dict.uniprotac2ENSP_dict,
+                           string_id_dict )
 
 
     // get kinomics dataset
@@ -791,7 +792,7 @@ workflow {
                                  kinomics_vemurafenib.metadata )
 
     // run methods on hernandez2017
-    /*phosx_hernandez2017 = PHOSX_HERNANDEZ2017( hernandez2017.seqrnk )
+    phosx_hernandez2017 = PHOSX_HERNANDEZ2017( hernandez2017.seqrnk )
     kinex_hernandez2017 = KINEX_HERNANDEZ2017( hernandez2017.seqrnk,
                                                string_id_dict,
                                                scoring_matrix )
@@ -800,11 +801,11 @@ workflow {
     kstar_hernandez2017 = KSTAR_HERNANDEZ2017( string_id_dict,
                                                hernandez2017.uniprot_seqrnk )
     ptmsea_hernandez2017 = PTMSEA_HERNANDEZ2017( string_id_dict )
-    zscore_hernandez2017 = ZSCORE_HERNANDEZ2017( string_id_dict )*/
+    zscore_hernandez2017 = ZSCORE_HERNANDEZ2017( string_id_dict )
 
 
     // run methods on cptac
-    /*phosx_cptac = PHOSX_CPTAC( cptac.seqrnk )
+    phosx_cptac = PHOSX_CPTAC( cptac.seqrnk )
     kinex_cptac = KINEX_CPTAC( cptac.seqrnk,
                                string_id_dict,
                                scoring_matrix )
@@ -813,7 +814,7 @@ workflow {
     kstar_cptac = KSTAR_CPTAC( string_id_dict,
                                cptac.uniprot_seqrnk )
     ptmsea_cptac = PTMSEA_CPTAC( string_id_dict )
-    zscore_cptac = ZSCORE_CPTAC( string_id_dict )*/
+    zscore_cptac = ZSCORE_CPTAC( string_id_dict )
 
 
     // run methods on Kinomics
@@ -828,13 +829,13 @@ workflow {
     
 
     // performance comparison on Hernandez2017
-    /*BENCHMARK_PHOSX_HERNANDEZ2017( phosx_hernandez2017,
+    BENCHMARK_PHOSX_HERNANDEZ2017( phosx_hernandez2017,
                                    gsea_hernandez2017,
                                    kinex_hernandez2017,
                                    kstar_hernandez2017,
                                    ptmsea_hernandez2017,
                                    zscore_hernandez2017,
-                                   hernandez2017.metadata )*/
+                                   hernandez2017.metadata )
 
 
     // performance comparison on cptac
@@ -848,11 +849,11 @@ workflow {
 
 
     // performance comparison on kinomics
-    /*BENCHMARK_PHOSX_KINOMICS( phosx_kinomics,
+    BENCHMARK_PHOSX_KINOMICS( phosx_kinomics,
                               gsea_kinomics,
                               kinex_kinomics,
                               kstar_kinomics,
-                              kinomics.metadata )*/
+                              kinomics.metadata )
 
     PUBLISH_CONFIG()
 

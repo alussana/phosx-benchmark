@@ -90,6 +90,60 @@ process run_kstar {
 
 
 /*
+Run KSTAR (exception tolerant version)
+
+Ref:
+Crowl, S., Jordan, B.T., Ahmed, H. et al. 
+KSTAR: An algorithm to predict patient-specific kinase activities from phosphoproteomic data. 
+Nat Commun 13, 4283 (2022). 
+<https://doi.org/10.1038/s41467-022-32017-5>
+
+Compute activity score for each kinase:
+
+The following values are considered for each kinase:
+
+act_upreg = -log2(kstar mann-whitney FPR) in the upregulation tests
+act_downreg = log2(kstar mann-whitney FPR) in the downregulation tests
+
+The final kinase activity for a kinase is argmax_{(act_upreg, act_downreg)}{abs(act)}
+*/
+process run_kstar_tolerant {
+
+    cpus "${params.n_cores}"
+    memory '32G'
+
+    publishDir "${out_dir}", pattern: "KSTAR/untranslated/${id}.tsv", mode: 'copy'
+
+    input:
+        tuple val(id),
+              file('input/input.rnk')
+        path 'input/kstar_network_ST.p'
+        path 'input/kstar_network_Y.p'
+
+    output:
+        tuple val(id),
+              file("KSTAR/untranslated/${id}.tsv")
+
+    script:
+    """
+    mkdir -p KSTAR/output
+    mkdir -p KSTAR/untranslated/
+
+    run_kstar_tolerant.py \
+        input/input.rnk \
+        KSTAR \
+        ${id} \
+        ${params.n_cores} \
+        input \
+        ${params.kstar_fc_threshold} \
+        | grep -v network \
+        > KSTAR/untranslated/${id}.tsv 2> kstar.err
+    """
+
+}
+
+
+/*
 Translate kinase names from KSTAR output
 */
 process translate_kstar_output {

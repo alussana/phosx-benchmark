@@ -47,16 +47,6 @@ def find_translation(
         return "BMX"
     key_parts = key.split("_")
     key = key_parts[0]
-    if (
-        key in Ensembl_HGNC_symbol_list
-        or key in Ensembl_HGNC_list
-        or key in Ensembl_UniProt_list
-    ):
-        if len(key_parts) > 1:
-            new_key = f"{key}_TYR"
-        else:
-            new_key = key
-        return new_key
     key_alias_df = alias_map_df.loc[alias_map_df["alias"] == key]
     string_id_array = key_alias_df["#string_protein_id"].unique()
     if len(string_id_array) == 0:

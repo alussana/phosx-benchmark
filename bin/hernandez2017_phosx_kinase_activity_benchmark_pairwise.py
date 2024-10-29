@@ -368,7 +368,7 @@ def pairwise_comparison(
     )
     downreg_true_kinase_quantile_df.columns = ["Method", "Normalized rank"]
     plt.clf()
-    plt.figure(figsize=[3, 3])
+    plt.figure(figsize=[2.2, 2.2])
     ax = sns.violinplot(
         data=joined_true_kinase_quantile_df,
         x="Method",
@@ -381,7 +381,7 @@ def pairwise_comparison(
     plt.tight_layout()
     plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_joined_true_kinase_quantile.pdf")
     plt.clf()
-    plt.figure(figsize=[3, 3])
+    plt.figure(figsize=[2.2, 2.2])
     ax = sns.violinplot(
         data=upreg_true_kinase_quantile_df,
         x="Method",
@@ -394,7 +394,7 @@ def pairwise_comparison(
     plt.tight_layout()
     plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_upreg_true_kinase_quantile.pdf")
     plt.clf()
-    plt.figure(figsize=[3, 3])
+    plt.figure(figsize=[2.2, 2.2])
     ax = sns.violinplot(
         data=downreg_true_kinase_quantile_df,
         x="Method",
@@ -427,11 +427,11 @@ def pairwise_comparison(
     method_2_score_total = method_2_top5percentScore_total + method_2_bottom5percentScore_total
     tp_percentage_df = pd.DataFrame(
         {
-            "Upregulation": [
+            "Upreg.": [
                 method_1_top5percentScore / method_1_score_total,
                 method_2_top5percentScore / method_2_score_total,
             ],
-            "Downregulation": [
+            "Downreg.": [
                 method_1_bottom5percentScore / method_1_score_total,
                 method_2_bottom5percentScore / method_2_score_total,
             ],
@@ -439,9 +439,9 @@ def pairwise_comparison(
         }
     )
     plt.clf()
-    plt.figure(figsize=[4, 3])
+    plt.figure(figsize=[2, 3])
     ax = tp_percentage_df.set_index("Method").plot(
-        kind="bar", stacked=True, color=["red", "blue"], alpha=0.5, figsize=(2.5, 3)
+        kind="bar", stacked=True, color=["red", "blue"], alpha=0.5, figsize=(2.2, 2.6)
     )
     plt.xticks(rotation=0)
     plt.legend(frameon=False)
@@ -479,11 +479,11 @@ def pairwise_comparison(
     )
     tp_percentage_df = pd.DataFrame(
         {
-            "Upregulation": [
+            "Upreg.": [
                 method_1_top5percentKinases / method_1_kinases_total,
                 method_2_top5percentKinases / method_2_kinases_total,
             ],
-            "Downregulation": [
+            "Downreg.": [
                 method_1_bottom5percentKinases / method_1_kinases_total,
                 method_2_bottom5percentKinases / method_2_kinases_total,
             ],
@@ -491,9 +491,9 @@ def pairwise_comparison(
         }
     )
     plt.clf()
-    plt.figure(figsize=[4, 3])
+    plt.figure(figsize=[2, 3])
     ax = tp_percentage_df.set_index("Method").plot(
-        kind="bar", stacked=True, color=["red", "blue"], alpha=0.5, figsize=(3, 3)
+        kind="bar", stacked=True, color=["red", "blue"], alpha=0.5, figsize=(2.2, 2.6)
     )
     plt.xticks(rotation=0)
     plt.legend(frameon=False)
@@ -684,7 +684,7 @@ def pairwise_comparison(
     data["Method"] = [method_2_name for i in range(len(data))]
     violinplots_joined_df = pd.concat([violinplots_joined_df, data])
     plt.clf()
-    plt.figure(figsize=[3, 3])
+    plt.figure(figsize=[3.5, 3.5])
     ax = sns.violinplot(
         data=violinplots_upreg_df, x="Metric", y="Value", hue="Method", cut=0
     )
@@ -698,7 +698,7 @@ def pairwise_comparison(
     plt.tight_layout()
     plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_upreg_auc_prc_violinplots_w_title.pdf")
     plt.clf()
-    plt.figure(figsize=[3, 3])
+    plt.figure(figsize=[3.5, 3.5])
     ax = sns.violinplot(
         data=violinplots_downreg_df, x="Metric", y="Value", hue="Method", cut=0
     )
@@ -712,7 +712,7 @@ def pairwise_comparison(
     plt.tight_layout()
     plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_downreg_auc_prc_violinplots_w_title.pdf")
     plt.clf()
-    plt.figure(figsize=[3, 3])
+    plt.figure(figsize=[3.5, 3.5])
     ax = sns.violinplot(
         data=violinplots_joined_df, x="Metric", y="Value", hue="Method", cut=0
     )
@@ -726,7 +726,7 @@ def pairwise_comparison(
     plt.tight_layout()
     plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_joined_auc_prc_violinplots_w_title.pdf")
     plt.clf()
-    plt.figure(figsize=[3, 3])
+    plt.figure(figsize=[2.2, 2.2])
     ax = sns.violinplot(
         data=violinplots_upreg_df, x="Metric", y="Value", hue="Method", cut=0
     )
@@ -738,7 +738,7 @@ def pairwise_comparison(
     plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_upreg_auc_prc_violinplots.pdf")
 
     plt.clf()
-    plt.figure(figsize=[3, 3])
+    plt.figure(figsize=[2.2, 2.2])
     ax = sns.violinplot(
         data=violinplots_downreg_df, x="Metric", y="Value", hue="Method", cut=0
     )
@@ -749,7 +749,7 @@ def pairwise_comparison(
     plt.tight_layout()
     plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_downreg_auc_prc_violinplots.pdf")
     plt.clf()
-    plt.figure(figsize=[3, 3])
+    plt.figure(figsize=[2.2, 2.2])
     ax = sns.violinplot(
         data=violinplots_joined_df, x="Metric", y="Value", hue="Method", cut=0
     )
@@ -794,10 +794,10 @@ def pairwise_comparison(
     plt.legend(loc="upper left", frameon=False, labels=["Upregulated", "Downregulated"])
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_score_regulated_kinases.pdf")
+    plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_in_{method_1_name}_{method_2_name}_score_regulated_kinases.pdf")
     plt.clf()
     plt.figure(figsize=(3, 3))
-    plt.ylim([0, 30])
+    #plt.ylim([0, 30])
     sns.histplot(
         regulated_df[f"{method_2_name} Activity Score"].loc[regulated_df["Regulation"] == 1],
         color="red",
@@ -817,7 +817,7 @@ def pairwise_comparison(
     plt.legend(loc="upper left", frameon=False, labels=["Upregulated", "Downregulated"])
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}hernandez2017_{method_2_name}_score_regulated_kinases.pdf")
+    plt.savefig(f"{out_prefix}hernandez2017_{method_2_name}_in_{method_1_name}_{method_2_name}_score_regulated_kinases.pdf")
     regulated_df = regulated_df.dropna()
     n_upregulated = len(regulated_df.loc[regulated_df["Regulation"] == 1])
     n_downregulated = len(regulated_df.loc[regulated_df["Regulation"] == -1])
@@ -847,7 +847,7 @@ def pairwise_comparison(
     plt.tight_layout()
     plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_regulated_kinases_ROC_w_title.pdf")
     plt.clf()
-    plt.figure(figsize=(3.5, 3))
+    plt.figure(figsize=(3, 3))
     plt.plot(method_1_fpr, method_1_tpr, lw=2, label=f"{method_1_name} (AUC = {method_1_roc_auc:.2f})")
     plt.plot(method_2_fpr, method_2_tpr, lw=2, label=f"{method_2_name} (AUC = {method_2_roc_auc:.2f})")
     plt.plot([0, 1], [0, 1], color="black", lw=0.5, linestyle="-")
@@ -866,7 +866,7 @@ def pairwise_comparison(
         regulated_df["Regulation"], regulated_df[f"{method_2_name} Activity Score"]
     )
     plt.clf()
-    plt.figure(figsize=(4, 4))
+    plt.figure(figsize=(3.5, 3.5))
     plt.plot(
         method_1_recall, method_1_precision, lw=2, label=f"{method_1_name} (AUC = {method_1_pr_auc:.2f})"
     )
@@ -891,7 +891,7 @@ def pairwise_comparison(
     plt.tight_layout()
     plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_regulated_kinases_PR_w_title.pdf")
     plt.clf()
-    plt.figure(figsize=(3.5, 3))
+    plt.figure(figsize=(3, 3))
     plt.plot(
         method_1_recall, method_1_precision, lw=2, label=f"{method_1_name} (AUC = {method_1_pr_auc:.2f})"
     )

@@ -377,7 +377,7 @@ Compute AUROC and AUPR. Reapeat 100 times.
 */
 process benchmark_phosx_cptac {
 
-    memory "300G"
+    memory "512G"
 
     publishDir "${out_dir}", pattern: "kinase_activity_benchmark/cptac/pairwise/*.pdf", mode: 'copy'
 
