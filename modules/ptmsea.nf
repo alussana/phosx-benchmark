@@ -62,10 +62,17 @@ process ptmsea_cptac {
     for type in \$(cat cptac_types.txt); do \
         cat 03_activity_scores/ptmsea/cptac/\${type}.tsv | cut -f3 | sort | uniq > \${type}_cond.txt; \
         for cond in \$(cat \${type}_cond.txt); do \
-            cat 03_activity_scores/ptmsea/cptac/\${type}.tsv \
-            | grep -w \${cond} \
-            | cut -f2,4 \
-            > PTM-SEA/untranslated/\${cond}.tsv; \
+            if [ "\$type" = "brca" ]; then \
+                cat 03_activity_scores/ptmsea/cptac/\${type}.tsv \
+                | grep -w \${cond} \
+                | cut -f2,4 \
+                > PTM-SEA/untranslated/X\${cond}.tsv; \
+            else \
+                cat 03_activity_scores/ptmsea/cptac/\${type}.tsv \
+                | grep -w \${cond} \
+                | cut -f2,4 \
+                > PTM-SEA/untranslated/\${cond}.tsv; \
+            fi;
         done; \
     done
     """

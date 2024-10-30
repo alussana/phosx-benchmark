@@ -28,6 +28,7 @@ include { hernandez2017_make_seqrnk } from './modules/hernandez2017'
 include { hernandez2017_make_uniprot_seqrnk } from './modules/hernandez2017'
 include { hernandez2017_make_rnk } from './modules/hernandez2017'
 include { benchmark_phosx_hernandez2017 } from './modules/hernandez2017'
+include { benchmark_phosx_per_kinase_hernandez2017 } from './modules/hernandez2017'
 
 include { parse_cptac_dataset } from './modules/cptac'
 include { split_cptac_samples } from './modules/cptac'
@@ -37,6 +38,8 @@ include { make_cptac_uniprot_rnk } from './modules/cptac'
 include { make_cptac_uniprot_seqrnk } from './modules/cptac'
 include { translate_cptac_metadata } from './modules/cptac'
 include { benchmark_phosx_cptac } from './modules/cptac'
+include { benchmark_phosx_cptac_pt1 } from './modules/cptac'
+include { benchmark_phosx_cptac_pt2 } from './modules/cptac'
 
 include { parse_kinomics_tremetinib_dataset } from './modules/kinomics'
 include { parse_kinomics_tremetinib_metadata } from './modules/kinomics'
@@ -677,6 +680,13 @@ workflow BENCHMARK_PHOSX_HERNANDEZ2017 {
                                       ptmsea_output,
                                       zscore_output,
                                       metadata )
+        benchmark_phosx_per_kinase_hernandez2017(phosx_output,
+                                      gsea_output,
+                                      kinex_output,
+                                      kstar_output,
+                                      ptmsea_output,
+                                      zscore_output,
+                                      metadata )
 
 }
 
@@ -693,13 +703,20 @@ workflow BENCHMARK_PHOSX_CPTAC {
         metadata
 
     main:
-        benchmark_phosx_cptac(phosx_output,
-                              gsea_output,
-                              kinex_output,
-                              kstar_output,
-                              ptmsea_output,
-                              zscore_output,
-                              metadata )
+        benchmark_phosx_cptac_pt1(phosx_output,
+                                  gsea_output,
+                                  kinex_output,
+                                  kstar_output,
+                                  ptmsea_output,
+                                  zscore_output,
+                                  metadata )
+        benchmark_phosx_cptac_pt2(phosx_output,
+                                  gsea_output,
+                                  kinex_output,
+                                  kstar_output,
+                                  ptmsea_output,
+                                  zscore_output,
+                                  metadata )
 
 }
 
@@ -775,12 +792,12 @@ workflow {
 
 
     // get cptac dataset
-    cptac = CPTAC_DATASET( gene_id_dict.uniprotac2ENSP_dict,
-                           string_id_dict )
+    /*cptac = CPTAC_DATASET( gene_id_dict.uniprotac2ENSP_dict,
+                           string_id_dict )*/
 
 
     // get kinomics dataset
-    kinomics_tremetinib = KINOMICS_TREMETINIB_DATASET( string_id_dict )
+    /*kinomics_tremetinib = KINOMICS_TREMETINIB_DATASET( string_id_dict )
     kinomics_vemurafenib = KINOMICS_VEMURAFENIB_DATASET( string_id_dict )
     kinomics = KINOMICS_DATASET( kinomics_tremetinib.seqrnk,
                                  kinomics_tremetinib.uniprot_seqrnk,
@@ -789,7 +806,7 @@ workflow {
                                  kinomics_vemurafenib.seqrnk,
                                  kinomics_vemurafenib.uniprot_seqrnk,
                                  kinomics_vemurafenib.rnk,
-                                 kinomics_vemurafenib.metadata )
+                                 kinomics_vemurafenib.metadata )*/
 
     // run methods on hernandez2017
     phosx_hernandez2017 = PHOSX_HERNANDEZ2017( hernandez2017.seqrnk )
@@ -805,7 +822,7 @@ workflow {
 
 
     // run methods on cptac
-    phosx_cptac = PHOSX_CPTAC( cptac.seqrnk )
+    /*phosx_cptac = PHOSX_CPTAC( cptac.seqrnk )
     kinex_cptac = KINEX_CPTAC( cptac.seqrnk,
                                string_id_dict,
                                scoring_matrix )
@@ -814,18 +831,18 @@ workflow {
     kstar_cptac = KSTAR_CPTAC( string_id_dict,
                                cptac.uniprot_seqrnk )
     ptmsea_cptac = PTMSEA_CPTAC( string_id_dict )
-    zscore_cptac = ZSCORE_CPTAC( string_id_dict )
+    zscore_cptac = ZSCORE_CPTAC( string_id_dict )*/
 
 
     // run methods on Kinomics
-    phosx_kinomics = PHOSX_KINOMICS( kinomics.seqrnk )
+    /*phosx_kinomics = PHOSX_KINOMICS( kinomics.seqrnk )
     kinex_kinomics = KINEX_KINOMICS( kinomics.seqrnk,
                                      string_id_dict,
                                      scoring_matrix )
     gsea_kinomics = GSEA_KINOMICS( psp_kin_sub_clusters,
                                    kinomics.rnk )
     kstar_kinomics = KSTAR_KINOMICS( string_id_dict,
-                                     kinomics.uniprot_seqrnk )
+                                     kinomics.uniprot_seqrnk )*/
     
 
     // performance comparison on Hernandez2017
@@ -849,11 +866,11 @@ workflow {
 
 
     // performance comparison on kinomics
-    BENCHMARK_PHOSX_KINOMICS( phosx_kinomics,
+    /*BENCHMARK_PHOSX_KINOMICS( phosx_kinomics,
                               gsea_kinomics,
                               kinex_kinomics,
                               kstar_kinomics,
-                              kinomics.metadata )
+                              kinomics.metadata )*/
 
     PUBLISH_CONFIG()
 

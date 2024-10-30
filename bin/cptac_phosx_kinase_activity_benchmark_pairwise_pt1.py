@@ -367,7 +367,7 @@ def pairwise_comparison(
         .melt()
     )
     downreg_true_kinase_quantile_df.columns = ["Method", "Normalized rank"]
-    plt.clf()
+    plt.close()
     plt.figure(figsize=[2.2, 2.2])
     ax = sns.violinplot(
         data=joined_true_kinase_quantile_df,
@@ -380,7 +380,7 @@ def pairwise_comparison(
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_joined_true_kinase_quantile.pdf")
-    plt.clf()
+    plt.close()
     plt.figure(figsize=[2.2, 2.2])
     ax = sns.violinplot(
         data=upreg_true_kinase_quantile_df,
@@ -393,7 +393,7 @@ def pairwise_comparison(
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_upreg_true_kinase_quantile.pdf")
-    plt.clf()
+    plt.close()
     plt.figure(figsize=[2.2, 2.2])
     ax = sns.violinplot(
         data=downreg_true_kinase_quantile_df,
@@ -438,7 +438,7 @@ def pairwise_comparison(
             "Method": [method_1_name, method_2_name],
         }
     )
-    plt.clf()
+    plt.close()
     plt.figure(figsize=[2, 3])
     ax = tp_percentage_df.set_index("Method").plot(
         kind="bar", stacked=True, color=["red", "blue"], alpha=0.5, figsize=(2.2, 2.6)
@@ -490,7 +490,7 @@ def pairwise_comparison(
             "Method": [method_1_name, method_2_name],
         }
     )
-    plt.clf()
+    plt.close()
     plt.figure(figsize=[2, 3])
     ax = tp_percentage_df.set_index("Method").plot(
         kind="bar", stacked=True, color=["red", "blue"], alpha=0.5, figsize=(2.2, 2.6)
@@ -683,7 +683,7 @@ def pairwise_comparison(
     data.columns = ["Metric", "Value"]
     data["Method"] = [method_2_name for i in range(len(data))]
     violinplots_joined_df = pd.concat([violinplots_joined_df, data])
-    plt.clf()
+    plt.close()
     plt.figure(figsize=[3, 3])
     ax = sns.violinplot(
         data=violinplots_upreg_df, x="Metric", y="Value", hue="Method", cut=0
@@ -697,7 +697,7 @@ def pairwise_comparison(
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_upreg_auc_prc_violinplots_w_title.pdf")
-    plt.clf()
+    plt.close()
     plt.figure(figsize=[3.5, 3.5])
     ax = sns.violinplot(
         data=violinplots_downreg_df, x="Metric", y="Value", hue="Method", cut=0
@@ -711,7 +711,7 @@ def pairwise_comparison(
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_downreg_auc_prc_violinplots_w_title.pdf")
-    plt.clf()
+    plt.close()
     plt.figure(figsize=[3.5, 3.5])
     ax = sns.violinplot(
         data=violinplots_joined_df, x="Metric", y="Value", hue="Method", cut=0
@@ -725,7 +725,7 @@ def pairwise_comparison(
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_joined_auc_prc_violinplots_w_title.pdf")
-    plt.clf()
+    plt.close()
     plt.figure(figsize=[2.2, 2.2])
     ax = sns.violinplot(
         data=violinplots_upreg_df, x="Metric", y="Value", hue="Method", cut=0
@@ -736,7 +736,7 @@ def pairwise_comparison(
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_upreg_auc_prc_violinplots.pdf")
-    plt.clf()
+    plt.close()
     plt.figure(figsize=[2.2, 2.2])
     ax = sns.violinplot(
         data=violinplots_downreg_df, x="Metric", y="Value", hue="Method", cut=0
@@ -747,7 +747,7 @@ def pairwise_comparison(
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_downreg_auc_prc_violinplots.pdf")
-    plt.clf()
+    plt.close()
     plt.figure(figsize=[2.2, 2.2])
     ax = sns.violinplot(
         data=violinplots_joined_df, x="Metric", y="Value", hue="Method", cut=0
@@ -771,7 +771,7 @@ def pairwise_comparison(
         )
         .merge(kinase_activity_method_2_df, on=["Experiment", "Kinase"], how="left")
     )
-    plt.clf()
+    plt.close()
     plt.figure(figsize=(3, 3))
     #plt.ylim([0, 30])
     sns.histplot(
@@ -794,7 +794,7 @@ def pairwise_comparison(
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_in_{method_1_name}_{method_2_name}_score_regulated_kinases.pdf")
-    plt.clf()
+    plt.close()
     plt.figure(figsize=(3, 3))
     #plt.ylim([0, 30])
     sns.histplot(
@@ -829,7 +829,7 @@ def pairwise_comparison(
     class_imbalance = n_upregulated / (n_upregulated + n_downregulated)
     if class_imbalance < 0.5:
         class_imbalance = 1 / class_imbalance
-    plt.clf()
+    plt.close()
     plt.figure(figsize=(3.5, 3.5))
     plt.plot(method_1_fpr, method_1_tpr, lw=2, label=f"{method_1_name} (AUC = {method_1_roc_auc:.2f})")
     plt.plot(method_2_fpr, method_2_tpr, lw=2, label=f"{method_2_name} (AUC = {method_2_roc_auc:.2f})")
@@ -845,7 +845,7 @@ def pairwise_comparison(
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_regulated_kinases_ROC_w_title.pdf")
-    plt.clf()
+    plt.close()
     plt.figure(figsize=(3, 3))
     plt.plot(method_1_fpr, method_1_tpr, lw=2, label=f"{method_1_name} (AUC = {method_1_roc_auc:.2f})")
     plt.plot(method_2_fpr, method_2_tpr, lw=2, label=f"{method_2_name} (AUC = {method_2_roc_auc:.2f})")
@@ -864,7 +864,7 @@ def pairwise_comparison(
     method_2_recall, method_2_precision, method_2_pr_auc = compute_pr(
         regulated_df["Regulation"], regulated_df[f"{method_2_name} Activity Score"]
     )
-    plt.clf()
+    plt.close()
     plt.figure(figsize=(3.5, 3.5))
     plt.plot(
         method_1_recall, method_1_precision, lw=2, label=f"{method_1_name} (AUC = {method_1_pr_auc:.2f})"
@@ -889,7 +889,7 @@ def pairwise_comparison(
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_regulated_kinases_PR_w_title.pdf")
-    plt.clf()
+    plt.close()
     plt.figure(figsize=(3, 3))
     plt.plot(
         method_1_recall, method_1_precision, lw=2, label=f"{method_1_name} (AUC = {method_1_pr_auc:.2f})"
@@ -941,9 +941,6 @@ def main():
     metadata_df.index = metadata_df.apply(
         lambda x: f'{x["Experiment"]}__{x["Kinase"]}', axis=1
     )
-    
-
-    gsea_kinase_activity_metric_str = "NES"
 
 
     # PhosX kinase activity
@@ -953,6 +950,9 @@ def main():
         kinase_activity_metric_str,
         out_prefix,
     )
+    
+    
+    gsea_kinase_activity_metric_str = "NES"
 
 
     # GSEApy kinase activity
@@ -962,6 +962,19 @@ def main():
         gsea_kinase_activity_metric_str,
         out_prefix,
     )
+    
+    
+    pairwise_comparison(
+        "PhosX",
+        kinase_activity_phosx_df,
+        "GSEApy",
+        kinase_activity_gsea_df,
+        metadata_df,
+        out_prefix,
+    )
+    
+    
+    del kinase_activity_gsea_df
    
 
     # Kinex kinase activity
@@ -972,34 +985,7 @@ def main():
         out_prefix,
     )
 
-    # KSTAR kinase activity
-    kinase_activity_kstar_df = make_kinase_activity_df(
-        "KSTAR",
-        input_list_kstar_txt,
-        kinase_activity_metric_str,
-        out_prefix,
-    )
-    
 
-    # PTM-SEA kinase activity
-    kinase_activity_ptmsea_df = make_kinase_activity_df(
-        "PTM-SEA",
-        input_list_ptmsea_txt,
-        kinase_activity_metric_str,
-        out_prefix,
-    )
-    
-
-    # Z-score kinase activity
-    kinase_activity_zscore_df = make_kinase_activity_df(
-        "Z-score",
-        input_list_zscore_txt,
-        kinase_activity_metric_str,
-        out_prefix,
-    )
-    
-    
-    # Pairwise comparisons: PhosX vs <method>
     pairwise_comparison(
         "PhosX",
         kinase_activity_phosx_df,
@@ -1008,14 +994,20 @@ def main():
         metadata_df,
         out_prefix,
     )
-    pairwise_comparison(
-        "PhosX",
-        kinase_activity_phosx_df,
-        "GSEApy",
-        kinase_activity_gsea_df,
-        metadata_df,
+    
+    
+    del kinase_activity_kinex_df
+    
+
+    # KSTAR kinase activity
+    kinase_activity_kstar_df = make_kinase_activity_df(
+        "KSTAR",
+        input_list_kstar_txt,
+        kinase_activity_metric_str,
         out_prefix,
     )
+    
+    
     pairwise_comparison(
         "PhosX",
         kinase_activity_phosx_df,
@@ -1024,22 +1016,9 @@ def main():
         metadata_df,
         out_prefix,
     )
-    pairwise_comparison(
-        "PhosX",
-        kinase_activity_phosx_df,
-        "PTM-SEA",
-        kinase_activity_ptmsea_df,
-        metadata_df,
-        out_prefix,
-    )
-    pairwise_comparison(
-        "PhosX",
-        kinase_activity_phosx_df,
-        "Z-score",
-        kinase_activity_zscore_df,
-        metadata_df,
-        out_prefix,
-    )
+    
+    
+    del kinase_activity_kstar_df
     
 
 if __name__ == "__main__":
