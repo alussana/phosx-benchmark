@@ -21,14 +21,13 @@ process run_phosx {
               file('input/input.seqrnk')
 
     output:
-        path "PhosX/${id}.tsv", emit: tsv
+        tuple val(id),
+              file("PhosX/${id}.tsv"), emit: tsv
         path "PhosX/${id}/*pdf"
 
     script:
     """
     mkdir -p PhosX/${id}
-
-    CACHEBUST=1
 
     #phosx \
         input/input.seqrnk \
@@ -53,6 +52,42 @@ process run_phosx {
 
     touch PhosX/${id}/__phony__.pdf
 
+    """
+
+}
+
+
+/*
+translate all the words in the first field of input/file.tsv 
+specified in the first tab-separated column of input/dict.tsv
+with the corresponding word found in the second column
+
+don't discard untranslated rows
+*/
+process translate_phosx_output {
+
+    publishDir "${out_dir}", pattern: "PhosX_tr/${id}.tsv", mode: 'copy'
+
+    input:
+        tuple val(id),
+              file('input/file.tsv')
+        path 'input/dict.tsv'
+
+    output:
+        path "PhosX_tr/${id}.tsv"
+
+    script:
+    """
+    mkdir -p PhosX_tr
+
+    translator.py \
+        input/dict.tsv \
+        input/file.tsv \
+        1 \
+        3 \
+        1 \
+        1 \
+        > PhosX_tr/${id}.tsv
     """
 
 }

@@ -14,21 +14,21 @@ Comprehensive evaluation of phosphoproteomic-based kinase activity inference
 */
 process ptmsea_hernandez2017 {
 
-    publishDir "${out_dir}", pattern: "PTM-SEA/untranslated/*.tsv", mode: 'copy'
+    publishDir "${out_dir}", pattern: "PTM-SEA/*.tsv", mode: 'copy'
 
     output:
-        path "PTM-SEA/untranslated/*.tsv"
+        path "PTM-SEA/*.tsv"
 
     script:
     """
-    mkdir -p PTM-SEA/untranslated/
+    mkdir -p PTM-SEA/
 
     unzip ${precomp_activity_scores}
 
     for file in \$(ls 03_activity_scores/ptmsea/hernandez/*tsv); do \
         idtsv=\$(basename \$file); id=\${idtsv::-4}; \
         cat \${file} | sed '1d' | cut -f2,4 \
-        > PTM-SEA/untranslated/\${id}.tsv; \
+        > PTM-SEA/\${id}.tsv; \
     done
     """
 
@@ -46,14 +46,14 @@ Comprehensive evaluation of phosphoproteomic-based kinase activity inference
 */
 process ptmsea_cptac {
 
-    publishDir "${out_dir}", pattern: "PTM-SEA/untranslated/*.tsv", mode: 'copy'
+    publishDir "${out_dir}", pattern: "PTM-SEA/*.tsv", mode: 'copy'
 
     output:
-        path "PTM-SEA/untranslated/*.tsv"
+        path "PTM-SEA/*.tsv"
 
     script:
     """
-    mkdir -p PTM-SEA/untranslated/
+    mkdir -p PTM-SEA/
 
     unzip ${precomp_activity_scores}
 
@@ -66,12 +66,12 @@ process ptmsea_cptac {
                 cat 03_activity_scores/ptmsea/cptac/\${type}.tsv \
                 | grep -w \${cond} \
                 | cut -f2,4 \
-                > PTM-SEA/untranslated/X\${cond}.tsv; \
+                > PTM-SEA/X\${cond}.tsv; \
             else \
                 cat 03_activity_scores/ptmsea/cptac/\${type}.tsv \
                 | grep -w \${cond} \
                 | cut -f2,4 \
-                > PTM-SEA/untranslated/\${cond}.tsv; \
+                > PTM-SEA/\${cond}.tsv; \
             fi;
         done; \
     done
@@ -81,31 +81,38 @@ process ptmsea_cptac {
 
 
 /*
-Translate kinase names from PTM-SEA output
+translate all the words in the first field of input/file.tsv 
+specified in the first tab-separated column of input/dict.tsv
+with the corresponding word found in the second column
+
+don't discard untranslated rows
 */
 process translate_ptmsea_output {
 
-    cpus "${params.n_cores}"
-
-    publishDir "${out_dir}", pattern: "PTM-SEA/${id}.tsv", mode: 'copy'
+    publishDir "${out_dir}", pattern: "PTM-SEA_tr/${id}.tsv", mode: 'copy'
 
     input:
         tuple val(id),
-              file("input/${id}.tsv")
-        path 'input/9606.protein.aliases.v12.0.txt.gz'
+              file('input/file.tsv')
+        path 'input/dict.tsv'
 
     output:
-        path "PTM-SEA/${id}.tsv", emit: tsv
+        path "PTM-SEA_tr/${id}.tsv"
 
     script:
     """
-    mkdir -p PTM-SEA
+    mkdir -p PTM-SEA_tr
 
-    translate_ptmsea_output.py \
-        input/9606.protein.aliases.v12.0.txt.gz \
-        input/${id}.tsv \
-        1 \
-        > PTM-SEA/${id}.tsv
+    cat \
+        <(echo -e "\\t${params.kinase_activity_metric}") \
+        <(  translator.py \
+            input/dict.tsv \
+            input/file.tsv \
+            1 \
+            3 \
+            1 \
+            1 ) \
+        > PTM-SEA_tr/${id}.tsv
     """
 
 }

@@ -7,85 +7,26 @@ from kinex.data import get_pssm
 #from kinex.data import get_groups
 import matplotlib.pyplot as plt
 
-
-alias_map_txt_gz = sys.argv[3]
-alias_map_df = pd.read_csv(alias_map_txt_gz, sep="\t")
-
-Ensembl_HGNC_symbol_list = alias_map_df.loc[
-    alias_map_df["source"] == "Ensembl_HGNC_symbol", "alias"
-].unique()
-
-Ensembl_HGNC_list = alias_map_df.loc[
-    alias_map_df["source"] == "Ensembl_HGNC", "alias"
-].unique()
-
-Ensembl_UniProt_list = alias_map_df.loc[
-    alias_map_df["source"] == "Ensembl_UniProt", "alias"
-].unique()
-
-
-def find_translation(
-    key,
-):
-    # The following mappings would collide if not for the ad-hoc flow control that follows:
-    # Ser/Thr:
-    # HGK     MAP4K4
-    # NIK     MAP4K4
-    # PDHK1   PDK1
-    # PDK1    PDK1
-    # Tyr:
-    # EPHA3   EPHA3
-    # ETK     EPHA3
-    if key == "NIK":
-        return "MAP3K14"
-    elif key == "PDK1":
-        return "PDPK1"
-    elif key == "ETK":
-        return "BMX"
-    key_parts = key.split("_")
-    key = key_parts[0]
-    if (
-        key in Ensembl_HGNC_symbol_list
-        or key in Ensembl_HGNC_list
-        or key in Ensembl_UniProt_list
-    ):
-        if len(key_parts) > 1:
-            new_key = f"{key}_TYR"
-        else:
-            new_key = key
-        return new_key
-    key_alias_df = alias_map_df.loc[alias_map_df["alias"] == key]
-    string_id_array = key_alias_df["#string_protein_id"].unique()
-    if len(string_id_array) == 0:
-        return key
+def translateWord(word: str, word_dict: pd.DataFrame, from_col=1, to_col=2):
+    trs = word_dict.loc[word_dict[from_col - 1] == word, ][to_col - 1]
+    if len(trs) == 0:
+        return(None)
     else:
-        for string_id_str in string_id_array:
-            try:
-                map_df = alias_map_df.loc[
-                    alias_map_df["#string_protein_id"] == string_id_str
-                ]
-                new_key = map_df.loc[map_df["source"] == "Ensembl_HGNC_symbol", "alias"]
-                if len(new_key) == 0:
-                    new_key = map_df.loc[map_df["source"] == "Ensembl_HGNC", "alias"]
-                if len(new_key) == 0:
-                    new_key = map_df.loc[map_df["source"] == "Ensembl_UniProt", "alias"]
-                if len(new_key) == 0:
-                    next
-                new_key = new_key.values[0]
-                if len(key_parts) > 1:
-                    new_key = f"{new_key}_TYR"
-                break
-            except Exception as e:
-                print(f"{key}: {e}")
-                next
-        return new_key
-
+        return(trs.values[0])
 
 def main():
     seqrnk = sys.argv[1]
-    fc_threshold = float(sys.argv[2])
-    scoring_matrix_tsv = sys.argv[4]
-    out_pdf = sys.argv[5]
+    out_pdf = sys.argv[2]
+    fc_threshold = float(sys.argv[3])
+    dict_file = sys.argv[4]
+    scoring_matrix_tsv = sys.argv[5]
+    
+    word_dict = pd.read_csv(dict_file, sep='\t', header=None)
+    # remove PAK1 --> PKN1 translation 
+    # remove PDHK1 --> PDK1 translation
+    # see get_ser_thr_kinase_pssm() process in modules/pssm.nf
+    word_dict.loc[word_dict[0]=='PAK1'] = None
+    word_dict.loc[word_dict[0]=='PDHK1'] = None
     
     scoring_matrix = pd.read_csv(scoring_matrix_tsv, sep='\t', index_col=0)
     
@@ -95,7 +36,9 @@ def main():
     tr_index = []
     for i in range(len(pssm_table.index)):
         word = pssm_table.index[i]
-        tr_word = find_translation(word)
+        tr_word = translateWord(word, word_dict, from_col=1, to_col=3)
+        if tr_word == None:
+            tr_word = word
         tr_index.append(tr_word)
     pssm_table.index = tr_index
     
@@ -117,7 +60,6 @@ def main():
     
     print(out_df.to_csv(sep='\t', header=True, index=True))
     
-    # the following would work only with the original custom-named kinases
     #fig = enrich.plot(use_adjusted_pval=True)
     #fig.write_image(out_pdf)
     

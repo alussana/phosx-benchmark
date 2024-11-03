@@ -14,21 +14,21 @@ Comprehensive evaluation of phosphoproteomic-based kinase activity inference
 */
 process zscore_hernandez2017 {
 
-    publishDir "${out_dir}", pattern: "Z-score/untranslated/*.tsv", mode: 'copy'
+    publishDir "${out_dir}", pattern: "Z-score/*.tsv", mode: 'copy'
 
     output:
-        path "Z-score/untranslated/*.tsv"
+        path "Z-score/*.tsv"
 
     script:
     """
-    mkdir -p Z-score/untranslated/
+    mkdir -p Z-score/
 
     unzip ${precomp_activity_scores}
 
     for file in \$(ls 03_activity_scores/zscore/hernandez/*tsv); do \
         idtsv=\$(basename \$file); id=\${idtsv::-4}; \
         cat \${file} | sed '1d' | cut -f2,4 \
-        > Z-score/untranslated/\${id}.tsv; \
+        > Z-score/\${id}.tsv; \
     done
     """
 
@@ -46,14 +46,14 @@ Comprehensive evaluation of phosphoproteomic-based kinase activity inference
 */
 process zscore_cptac {
 
-    publishDir "${out_dir}", pattern: "Z-score/untranslated/*.tsv", mode: 'copy'
+    publishDir "${out_dir}", pattern: "Z-score/*.tsv", mode: 'copy'
 
     output:
-        path "Z-score/untranslated/*.tsv"
+        path "Z-score/*.tsv"
 
     script:
     """
-    mkdir -p Z-score/untranslated/
+    mkdir -p Z-score/
 
     unzip ${precomp_activity_scores}
 
@@ -65,7 +65,7 @@ process zscore_cptac {
             cat 03_activity_scores/zscore/cptac/\${type}.tsv \
             | grep -w \${cond} \
             | cut -f2,4 \
-            > Z-score/untranslated/\${cond}.tsv; \
+            > Z-score/\${cond}.tsv; \
         done; \
     done
     """
@@ -74,31 +74,38 @@ process zscore_cptac {
 
 
 /*
-Translate kinase names from Z-score output
+translate all the words in the first field of input/file.tsv 
+specified in the first tab-separated column of input/dict.tsv
+with the corresponding word found in the second column
+
+don't discard untranslated rows
 */
 process translate_zscore_output {
 
-    cpus "${params.n_cores}"
-
-    publishDir "${out_dir}", pattern: "Z-score/${id}.tsv", mode: 'copy'
+    publishDir "${out_dir}", pattern: "Z-score_tr/${id}.tsv", mode: 'copy'
 
     input:
         tuple val(id),
-              file("input/${id}.tsv")
-        path 'input/9606.protein.aliases.v12.0.txt.gz'
+              file('input/file.tsv')
+        path 'input/dict.tsv'
 
     output:
-        path "Z-score/${id}.tsv", emit: tsv
-
+        path "Z-score_tr/${id}.tsv"
+         
     script:
     """
-    mkdir -p Z-score
+    mkdir -p Z-score_tr
 
-    translate_zscore_output.py \
-        input/9606.protein.aliases.v12.0.txt.gz \
-        input/${id}.tsv \
-        1 \
-        > Z-score/${id}.tsv
+    cat \
+        <(echo -e "\\t${params.kinase_activity_metric}") \
+        <(  translator.py \
+            input/dict.tsv \
+            input/file.tsv \
+            1 \
+            3 \
+            1 \
+            1 ) \
+        > Z-score_tr/${id}.tsv
     """
 
 }

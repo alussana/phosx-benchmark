@@ -71,6 +71,32 @@ and the UniProt ACs are then mapped to the corresponding ids of nomenclature
 IDb. For example, all ENSP ids are mapped to their UniProt AC. Then, each of
 the UniProt AC identifiers is mapped to HGNC ids.
 
+The following mappings would collide if not for the ad-hoc flow control that follows:
+    # Ser/Thr:
+    # HGK     MAP4K4
+    # NIK     MAP4K4
+    # PDHK1   PDK1
+    # PDK1    PDK1
+    # Tyr:
+    # EPHA3   EPHA3
+    # ETK     EPHA3
+
+    if key == "NIK":
+        return "MAP3K14"
+    elif key == "PDK1":
+        return "PDPK1"
+    elif key == "ETK":
+        return "BMX"
+
+Furthermore, PAK1 is a gene name, not a synomym. If translated it will collide
+with PKN1 present in the data. This translation is therefore remved from the
+dictionary
+    # PAK1    PKN1
+
+The following translation is removed because in the kinase PSSMs there exist
+both HGK and MAP4K4, despite they should be synonyms
+    # HGK     MAP4K4
+
 .META:
 1. IDa
 2. UniProt AC referred to IDa
@@ -98,10 +124,16 @@ process IDa2uniprot2IDb {
         | grep -w -f <(echo -e "${IDa}\n${IDb}") \
         | gzip > mapping.tsv.gz
 
-    IDa2uniprot2IDb.py \
-        mapping.tsv.gz \
-        ${IDa} \
-        ${IDb} \
+    cat <(  IDa2uniprot2IDb.py \
+            mapping.tsv.gz \
+            ${IDa} \
+            ${IDb} \
+            | grep -v "NIK.*MAP4K4" \
+            | grep -v "ETK.*EPHA3" \
+            | grep -v "PAK1.*PKN1" \
+            | grep -v "HGK.*MAP4K4" ) \
+        <(echo -e "ETK\\tCUSTOM\\tBMX") \
+        <(echo -e "PDK1\\tCUSTOM\\tPDPK1") \
         > datasets/uniprot/${IDa}2uniprot2${IDb}.tsv
     """
 

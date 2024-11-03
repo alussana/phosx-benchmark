@@ -44,33 +44,6 @@ process parse_hernandez2017_dataset {
 
 
 /*
-translate all the words in the second field of input/file.tsv 
-specified in the first tab-separated column of input/dict.tsv
-with the corresponding word found in the second column
-
-don't discard untranslated rows
-*/
-process translate_hernandez2017_metadata {
-
-    input:
-        path 'input/file.tsv'
-        path 'input/dict.tsv.gz'
-
-    output:
-        path 'translated_file.tsv'
-
-    script:
-    """
-    translate_hernandez2017_metadata.py \
-        input/dict.tsv.gz \
-        input/file.tsv \
-        > translated_file.tsv
-    """
-
-}
-
-
-/*
 translate all the words in the first field of input/file.tsv 
 specified in the second tab-separated column of input/dict.tsv
 with the corresponding word found in the first column

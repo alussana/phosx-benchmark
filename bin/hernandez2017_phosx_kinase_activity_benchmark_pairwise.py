@@ -231,14 +231,16 @@ def make_kinase_activity_df(
             data_id = os.path.basename(data_path_str)[:-4]
             data_path_dict[data_id] = data_path_str
     # build dataframe of kinase activities
-    kinase_activity_df = pd.DataFrame()
-    for data_id in data_path_dict.keys():
-        df = pd.read_csv(data_path_dict[data_id], sep="\t", index_col=0)
+    df_list = []
+    for data_id, path in data_path_dict.items():
+        df = pd.read_csv(path, sep="\t", index_col=0)
         if len(df.columns) == 0:
-            df = pd.read_csv(data_path_dict[data_id], sep=",", index_col=0)
+            df = pd.read_csv(path, sep=",", index_col=0)
         series = df[kinase_activity_metric]
         series.name = data_id
-        kinase_activity_df = kinase_activity_df.join(series, how="outer")
+        df = pd.DataFrame(series)
+        df_list.append(series)
+    kinase_activity_df = pd.concat(df_list, axis=1, join="outer")
     # normalise and scale
     kinase_activity_df = quantile_normalize(kinase_activity_df)
     kinase_activity_df = scale_01(kinase_activity_df)
@@ -736,7 +738,6 @@ def pairwise_comparison(
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_upreg_auc_prc_violinplots.pdf")
-
     plt.clf()
     plt.figure(figsize=[2.2, 2.2])
     ax = sns.violinplot(
@@ -932,7 +933,7 @@ def main():
     input_list_zscore_txt = 'input_files_zscore.txt'
     metadata_tsv = 'input/metadata.tsv'
     kinase_activity_metric_str = 'Activity Score'
-    out_prefix = 'kinase_activity_benchmark/hernandez2017/intersection/'
+    out_prefix = 'kinase_activity_benchmark/hernandez2017/pairwise/'
     """
     
     
@@ -956,15 +957,6 @@ def main():
     )
 
 
-    # GSEApy kinase activity
-    kinase_activity_gsea_df = make_kinase_activity_df(
-        "GSEA",  
-        input_list_gsea_txt,
-        gsea_kinase_activity_metric_str,
-        out_prefix,
-    )
-   
-
     # Kinex kinase activity
     kinase_activity_kinex_df = make_kinase_activity_df(
         "Kinex",
@@ -972,6 +964,42 @@ def main():
         kinase_activity_metric_str,
         out_prefix,
     )
+
+
+    pairwise_comparison(
+        "PhosX",
+        kinase_activity_phosx_df,
+        "Kinex",
+        kinase_activity_kinex_df,
+        metadata_df,
+        out_prefix,
+    )
+    
+    
+    del kinase_activity_kinex_df
+
+
+    # GSEApy kinase activity
+    kinase_activity_gsea_df = make_kinase_activity_df(
+        "GSEA",  
+        input_list_gsea_txt,
+        gsea_kinase_activity_metric_str,
+        out_prefix,
+    )
+
+
+    pairwise_comparison(
+        "PhosX",
+        kinase_activity_phosx_df,
+        "GSEApy",
+        kinase_activity_gsea_df,
+        metadata_df,
+        out_prefix,
+    )
+    
+    
+    del kinase_activity_gsea_df
+    
 
     # KSTAR kinase activity
     kinase_activity_kstar_df = make_kinase_activity_df(
@@ -981,6 +1009,19 @@ def main():
         out_prefix,
     )
     
+    
+    pairwise_comparison(
+        "PhosX",
+        kinase_activity_phosx_df,
+        "KSTAR",
+        kinase_activity_kstar_df,
+        metadata_df,
+        out_prefix,
+    )
+    
+    
+    del kinase_activity_kstar_df
+    
 
     # PTM-SEA kinase activity
     kinase_activity_ptmsea_df = make_kinase_activity_df(
@@ -989,6 +1030,19 @@ def main():
         kinase_activity_metric_str,
         out_prefix,
     )
+    
+    
+    pairwise_comparison(
+        "PhosX",
+        kinase_activity_phosx_df,
+        "PTM-SEA",
+        kinase_activity_ptmsea_df,
+        metadata_df,
+        out_prefix,
+    )
+    
+    
+    del kinase_activity_ptmsea_df
     
 
     # Z-score kinase activity
@@ -1000,39 +1054,6 @@ def main():
     )
     
     
-    # Pairwise comparisons: PhosX vs <method>
-    pairwise_comparison(
-        "PhosX",
-        kinase_activity_phosx_df,
-        "Kinex",
-        kinase_activity_kinex_df,
-        metadata_df,
-        out_prefix,
-    )
-    pairwise_comparison(
-        "PhosX",
-        kinase_activity_phosx_df,
-        "GSEApy",
-        kinase_activity_gsea_df,
-        metadata_df,
-        out_prefix,
-    )
-    pairwise_comparison(
-        "PhosX",
-        kinase_activity_phosx_df,
-        "KSTAR",
-        kinase_activity_kstar_df,
-        metadata_df,
-        out_prefix,
-    )
-    pairwise_comparison(
-        "PhosX",
-        kinase_activity_phosx_df,
-        "PTM-SEA",
-        kinase_activity_ptmsea_df,
-        metadata_df,
-        out_prefix,
-    )
     pairwise_comparison(
         "PhosX",
         kinase_activity_phosx_df,

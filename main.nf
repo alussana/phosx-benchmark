@@ -13,16 +13,11 @@ include { IDa2uniprot2IDb } from './modules/uniprot_id_dict'
 
 include { dl_string_aliases } from './modules/string_id_dict'
 
-include { get_ser_thr_kinome_2023_suppl_table_2 } from './modules/pssm'
-include { get_ser_thr_kinase_pssm } from './modules/pssm'
-
 include { psp_kinase_substrates } from './modules/psp'
 include { kin_phos_clusters } from './modules/psp'
 include { translate_kin_phos_clusters } from './modules/psp'
-include { hs_phosphoproteome } from './modules/psp'
 
 include { parse_hernandez2017_dataset } from './modules/hernandez2017'
-include { translate_hernandez2017_metadata } from './modules/hernandez2017'
 include { hernandez2017_rnk_translate1col_w_dict } from './modules/hernandez2017'
 include { hernandez2017_make_seqrnk } from './modules/hernandez2017'
 include { hernandez2017_make_uniprot_seqrnk } from './modules/hernandez2017'
@@ -50,9 +45,8 @@ include { translate_kinomics_vemurafenib_metadata } from './modules/kinomics'
 include { join_kinomics_metadata } from './modules/kinomics'
 include { benchmark_phosx_kinomics } from './modules/kinomics'
 
-include { pssm_background_scores } from './modules/phossea'
-
 include { run_phosx } from './modules/phosx'
+include { translate_phosx_output } from './modules/phosx'
 
 include { get_kinex_scoring_matrix } from './modules/kinex'
 include { run_kinex } from './modules/kinex'
@@ -88,7 +82,7 @@ workflow GET_GENE_ID_DICT {
 }
 
 
-/*workflow Gene_Synonym__2__Gene_Name {
+workflow Gene_Synonym__2__Gene_Name {
 
     take:
         uniprot_id_dict
@@ -101,95 +95,24 @@ workflow GET_GENE_ID_DICT {
     emit:
         dict
 
-}*/
-
-
-workflow GET_STRING_ID_DICT {
-
-    main:
-        string_id_dict = dl_string_aliases()
-
-    emit:
-        string_id_dict
-
 }
-
-
-workflow SER_THR_KINASES_PSSM {
-
-    take:
-        gene_synonym_2_gene_name_dict
-
-    main:
-        kinome_2023_suppl_table_2 = get_ser_thr_kinome_2023_suppl_table_2()
-        pssm_out = get_ser_thr_kinase_pssm( kinome_2023_suppl_table_2, gene_synonym_2_gene_name_dict )
-        pssm = pssm_out.pssm_dict_h5
-
-    emit:
-        pssm
-
-}
-
-
-/*workflow PSP {
-
-    take:
-        psp_kinase_substrates_dataset_gz
-        psp_phosphosites_dataset_gz
-        dict
-
-    main:
-        kinase_substrates = psp_kinase_substrates( psp_kinase_substrates_dataset_gz )
-        kin_sub_clusters_untranslated = kin_phos_clusters( kinase_substrates )
-        kin_sub_clusters = translate_kin_phos_clusters( kin_sub_clusters_untranslated, dict )
-        human_phosphosites = hs_phosphoproteome( psp_phosphosites_dataset_gz )
-
-    emit:
-        kinase_substrates
-        kin_sub_clusters
-        human_phosphosites
-
-}*/
 
 
 workflow PSP {
 
     take:
         psp_kinase_substrates_dataset_gz
-        psp_phosphosites_dataset_gz
-        string_id_dict
+        dict
 
     main:
         kinase_substrates = psp_kinase_substrates( psp_kinase_substrates_dataset_gz )
         kin_sub_clusters_untranslated = kin_phos_clusters( kinase_substrates )
-        kin_sub_clusters = translate_kin_phos_clusters( kin_sub_clusters_untranslated,
-                                                        string_id_dict )
-        human_phosphosites = hs_phosphoproteome( psp_phosphosites_dataset_gz )
+        kin_sub_clusters = translate_kin_phos_clusters( kin_sub_clusters_untranslated, dict )
 
     emit:
         kin_sub_clusters
-        human_phosphosites
 
 }
-
-
-/*workflow PSSM_BACKGROUND_SCORES {
-
-    take:
-        human_phosphosites_tsv
-        pssm_dict_h5
-
-    main:
-        pssm_bg_scores = pssm_background_scores( human_phosphosites_tsv,
-                                                 pssm_dict_h5 )
-        tsvgz = pssm_bg_scores.tsvgz
-        h5 = pssm_bg_scores.h5
-
-    emit:
-        tsvgz
-        h5
-
-}*/
 
 
 workflow KINEX_SCORING_MATRIX {
@@ -217,8 +140,7 @@ workflow HERNANDEZ2017_DATASET {
         untranslated_rnk = dataset.rnk
                 .flatMap()
                 .map{file -> tuple( file.baseName, file )}
-        //metadata = translate2col(dataset.metadata, geneSynonym2geneName )
-        metadata = translate_hernandez2017_metadata( dataset.metadata, geneSynonym2geneName )
+        metadata = translate2col(dataset.metadata, geneSynonym2geneName )
         uniprot_rnk = hernandez2017_rnk_translate1col_w_dict( untranslated_rnk, uniprotac2ENSP_dict )
         seqrnk = hernandez2017_make_seqrnk( uniprot_rnk )
         uniprot_seqrnk = hernandez2017_make_uniprot_seqrnk( uniprot_rnk )
@@ -373,14 +295,17 @@ workflow PHOSX_HERNANDEZ2017 {
 
     take:
         seqrnk
+        gene_synonym_2_gene_name_dict
 
     main:
-        phosx_output = run_phosx( seqrnk )
-                            .tsv
+        phosx_output = run_phosx( seqrnk ).tsv
+
+        phosx_output_tr = translate_phosx_output( phosx_output,
+                                                  gene_synonym_2_gene_name_dict )
                             .collect()
 
     emit:
-        phosx_output
+        phosx_output_tr
 
 }
 
@@ -525,20 +450,20 @@ workflow GSEA_KINOMICS {
 workflow KSTAR_HERNANDEZ2017{
 
     take:
-        string_id_dict
+        gene_synonym_2_gene_name_dict
         uniprot_rnk
 
     main:
         kstar_networks = make_kstar_networks()
-        kstar_output_untr = run_kstar( uniprot_rnk,
-                                       kstar_networks.st_net,
-                                       kstar_networks.y_net )
-        kstar_output = translate_kstar_output( kstar_output_untr,
-                                               string_id_dict )
+        kstar_output = run_kstar( uniprot_rnk,
+                                  kstar_networks.st_net,
+                                  kstar_networks.y_net )
+        kstar_output_tr = translate_kstar_output( kstar_output,
+                                                  gene_synonym_2_gene_name_dict )
                             .collect()
 
     emit:
-        kstar_output
+        kstar_output_tr
 
 }
 
@@ -588,14 +513,14 @@ workflow KSTAR_KINOMICS{
 workflow PTMSEA_HERNANDEZ2017{
 
     take:
-        string_id_dict
+        gene_synonym_2_gene_name_dict
 
     main:
         ptmsea_output_untr = ptmsea_hernandez2017()
                                 .flatMap()
                                 .map{file -> tuple( file.baseName, file )}
         ptmsea_output = translate_ptmsea_output( ptmsea_output_untr,
-                                                 string_id_dict )
+                                                 gene_synonym_2_gene_name_dict )
                             .collect()
 
     emit:
@@ -626,14 +551,14 @@ workflow PTMSEA_CPTAC{
 workflow ZSCORE_HERNANDEZ2017{
 
     take:
-        string_id_dict
+        gene_synonym_2_gene_name_dict
 
     main:
         zscore_output_untr = zscore_hernandez2017()
                                 .flatMap()
                                 .map{file -> tuple( file.baseName, file )}
         zscore_output = translate_zscore_output( zscore_output_untr,
-                                                 string_id_dict )
+                                                 gene_synonym_2_gene_name_dict )
                             .collect()
 
     emit:
@@ -758,37 +683,21 @@ workflow {
 
 
     // get UniProt-based ID mapping dictionary: Gene Synonym --> Gene Name
-    //gene_synonym_2_gene_name_dict = Gene_Synonym__2__Gene_Name( gene_id_dict.uniprot_id_dict )
-
-
-    // get alias table from STRING
-    string_id_dict = GET_STRING_ID_DICT()
-
-
-    // get pssms
-    //ser_thr_kinases_pssm_dict_h5 = SER_THR_KINASES_PSSM( gene_synonym_2_gene_name_dict ).pssm
+    gene_synonym_2_gene_name_dict = Gene_Synonym__2__Gene_Name( gene_id_dict.uniprot_id_dict )
 
 
     // get human k-p associations from psp
-    psp_data = PSP( psp_kinase_substrate_gz,
-                    psp_phosphosites_dataset_gz,
-                    string_id_dict )
-    psp_kin_sub_clusters = psp_data.kin_sub_clusters
-    //psp_human_phosphosites = psp_data.human_phosphosites
-
-
-    // compute a priori pssm score distributions
-    /*pssm_bg_scores = PSSM_BACKGROUND_SCORES( psp_human_phosphosites,
-                                             ser_thr_kinases_pssm_dict_h5 )*/
+    psp_kin_sub_clusters = PSP( psp_kinase_substrate_gz,
+                                gene_synonym_2_gene_name_dict )
 
 
     // process Kinex scoring matrix
-    scoring_matrix = KINEX_SCORING_MATRIX( string_id_dict )
+    scoring_matrix = KINEX_SCORING_MATRIX( gene_synonym_2_gene_name_dict )
 
 
     // get hernandez2017 dataset
     hernandez2017 = HERNANDEZ2017_DATASET( gene_id_dict.uniprotac2ENSP_dict,
-                                           string_id_dict )
+                                           gene_synonym_2_gene_name_dict )
 
 
     // get cptac dataset
@@ -808,17 +717,19 @@ workflow {
                                  kinomics_vemurafenib.rnk,
                                  kinomics_vemurafenib.metadata )*/
 
+
     // run methods on hernandez2017
-    phosx_hernandez2017 = PHOSX_HERNANDEZ2017( hernandez2017.seqrnk )
+    phosx_hernandez2017 = PHOSX_HERNANDEZ2017( hernandez2017.seqrnk,
+                                               gene_synonym_2_gene_name_dict )
     kinex_hernandez2017 = KINEX_HERNANDEZ2017( hernandez2017.seqrnk,
-                                               string_id_dict,
+                                               gene_synonym_2_gene_name_dict,
                                                scoring_matrix )
     gsea_hernandez2017 = GSEA_HERNANDEZ2017( psp_kin_sub_clusters,
                                              hernandez2017.rnk )
-    kstar_hernandez2017 = KSTAR_HERNANDEZ2017( string_id_dict,
+    kstar_hernandez2017 = KSTAR_HERNANDEZ2017( gene_synonym_2_gene_name_dict,
                                                hernandez2017.uniprot_seqrnk )
-    ptmsea_hernandez2017 = PTMSEA_HERNANDEZ2017( string_id_dict )
-    zscore_hernandez2017 = ZSCORE_HERNANDEZ2017( string_id_dict )
+    ptmsea_hernandez2017 = PTMSEA_HERNANDEZ2017( gene_synonym_2_gene_name_dict )
+    zscore_hernandez2017 = ZSCORE_HERNANDEZ2017( gene_synonym_2_gene_name_dict )
 
 
     // run methods on cptac

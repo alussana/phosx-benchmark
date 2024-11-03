@@ -127,14 +127,16 @@ def make_kinase_activity_df(
             data_id = os.path.basename(data_path_str)[:-4]
             data_path_dict[data_id] = data_path_str
     # build dataframe of kinase activities
-    kinase_activity_df = pd.DataFrame()
-    for data_id in data_path_dict.keys():
-        df = pd.read_csv(data_path_dict[data_id], sep="\t", index_col=0)
+    df_list = []
+    for data_id, path in data_path_dict.items():
+        df = pd.read_csv(path, sep="\t", index_col=0)
         if len(df.columns) == 0:
-            df = pd.read_csv(data_path_dict[data_id], sep=",", index_col=0)
+            df = pd.read_csv(path, sep=",", index_col=0)
         series = df[kinase_activity_metric]
         series.name = data_id
-        kinase_activity_df = kinase_activity_df.join(series, how="outer")
+        df = pd.DataFrame(series)
+        df_list.append(series)
+    kinase_activity_df = pd.concat(df_list, axis=1, join="outer")
     # normalise and scale
     kinase_activity_df = quantile_normalize(kinase_activity_df)
     kinase_activity_df = scale_01(kinase_activity_df)

@@ -58,7 +58,7 @@ process run_kstar {
     cpus "${params.n_cores}"
     memory '32G'
 
-    publishDir "${out_dir}", pattern: "KSTAR/untranslated/${id}.tsv", mode: 'copy'
+    publishDir "${out_dir}", pattern: "KSTAR//${id}.tsv", mode: 'copy'
 
     input:
         tuple val(id),
@@ -68,12 +68,11 @@ process run_kstar {
 
     output:
         tuple val(id),
-              file("KSTAR/untranslated/${id}.tsv")
+              file("KSTAR//${id}.tsv")
 
     script:
     """
     mkdir -p KSTAR/output
-    mkdir -p KSTAR/untranslated/
 
     run_kstar.py \
         input/input.rnk \
@@ -83,7 +82,7 @@ process run_kstar {
         input \
         ${params.kstar_fc_threshold} \
         | grep -v network \
-        > KSTAR/untranslated/${id}.tsv 2> kstar.err
+        > KSTAR//${id}.tsv 2> kstar.err
     """
 
 }
@@ -112,7 +111,7 @@ process run_kstar_tolerant {
     cpus "${params.n_cores}"
     memory '32G'
 
-    publishDir "${out_dir}", pattern: "KSTAR/untranslated/${id}.tsv", mode: 'copy'
+    publishDir "${out_dir}", pattern: "KSTAR/${id}.tsv", mode: 'copy'
 
     input:
         tuple val(id),
@@ -122,12 +121,11 @@ process run_kstar_tolerant {
 
     output:
         tuple val(id),
-              file("KSTAR/untranslated/${id}.tsv")
+              file("KSTAR/${id}.tsv")
 
     script:
     """
     mkdir -p KSTAR/output
-    mkdir -p KSTAR/untranslated/
 
     run_kstar_tolerant.py \
         input/input.rnk \
@@ -137,38 +135,45 @@ process run_kstar_tolerant {
         input \
         ${params.kstar_fc_threshold} \
         | grep -v network \
-        > KSTAR/untranslated/${id}.tsv 2> kstar.err
+        > KSTAR/${id}.tsv 2> kstar.err
     """
 
 }
 
 
 /*
-Translate kinase names from KSTAR output
+translate all the words in the first field of input/file.tsv 
+specified in the first tab-separated column of input/dict.tsv
+with the corresponding word found in the second column
+
+don't discard untranslated rows
 */
 process translate_kstar_output {
 
-    cpus "${params.n_cores}"
-
-    publishDir "${out_dir}", pattern: "KSTAR/${id}.tsv", mode: 'copy'
+    publishDir "${out_dir}", pattern: "KSTAR_tr/${id}.tsv", mode: 'copy'
 
     input:
         tuple val(id),
-              file('input/input.rnk')
-        path 'input/9606.protein.aliases.v12.0.txt.gz'
+              file('input/file.tsv')
+        path 'input/dict.tsv'
 
     output:
-        path "KSTAR/${id}.tsv", emit: tsv
+        path "KSTAR_tr/${id}.tsv"
 
     script:
     """
-    mkdir -p KSTAR
+    mkdir -p KSTAR_tr
 
-    translate_kstar_output.py \
-        input/9606.protein.aliases.v12.0.txt.gz \
-        input/input.rnk \
-        1 \
-        > KSTAR/${id}.tsv
+    cat \
+        <(echo -e "\\t${params.kinase_activity_metric}") \
+        <(  translator.py \
+            input/dict.tsv \
+            input/file.tsv \
+            1 \
+            3 \
+            1 \
+            1 ) \
+        > KSTAR_tr/${id}.tsv
     """
 
 }
