@@ -1,7 +1,7 @@
 FROM debian
 RUN apt-get update && \
         apt-get upgrade -y && \
-        apt-get install -y wget zip python3
+        apt-get install -y wget zip python3-dev
 RUN ln -s /usr/bin/python3 /usr/bin/python
 RUN wget -O get-pip.py "https://bootstrap.pypa.io/get-pip.py"
 RUN python get-pip.py --break-system-packages
