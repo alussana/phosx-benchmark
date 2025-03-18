@@ -373,9 +373,10 @@ workflow PHOSX_HERNANDEZ2017 {
 
     take:
         seqrnk
+        dict
 
     main:
-        phosx_output = run_phosx( seqrnk )
+        phosx_output = run_phosx( seqrnk, dict )
                             .tsv
                             .collect()
 
@@ -809,7 +810,8 @@ workflow {
                                  kinomics_vemurafenib.metadata )*/
 
     // run methods on hernandez2017
-    phosx_hernandez2017 = PHOSX_HERNANDEZ2017( hernandez2017.seqrnk )
+    phosx_hernandez2017 = PHOSX_HERNANDEZ2017( hernandez2017.seqrnk,
+                                               string_id_dict )
     kinex_hernandez2017 = KINEX_HERNANDEZ2017( hernandez2017.seqrnk,
                                                string_id_dict,
                                                scoring_matrix )

@@ -53,8 +53,11 @@ def read_pssms(pssms_h5_file: str):
 
 def read_seqrnk(seqrnk_file: str, ser_thr_only: bool = False, tyr_only: bool = False):
     if ser_thr_only and tyr_only:
-        print('W: both ser_thr_only and tyr_only have been set to True. PhosX will consider only Ser/Thr phosphosites in this run.', file=sys.stderr)
-        
+        print(
+            "W: both ser_thr_only and tyr_only have been set to True. PhosX will consider only Ser/Thr phosphosites in this run.",
+            file=sys.stderr,
+        )
+
     seqrnk = pd.read_csv(seqrnk_file, sep="\t", header=None)
     seqrnk.columns = ["Sequence", "Score"]
 
@@ -73,10 +76,7 @@ def read_seqrnk(seqrnk_file: str, ser_thr_only: bool = False, tyr_only: bool = F
         seqrnk.index = range(len(seqrnk))
     elif tyr_only:
         seqrnk = seqrnk.loc[
-            [
-                seqrnk["Sequence"][i][5] == "Y"
-                for i in range(len(seqrnk))
-            ]
+            [seqrnk["Sequence"][i][5] == "Y" for i in range(len(seqrnk))]
         ]
         seqrnk.index = range(len(seqrnk))
 
@@ -89,17 +89,25 @@ def read_pssm_score_quantiles(pssm_score_quantiles_h5_file: str):
     return pssm_bg_scores_df
 
 
-def quantile_scaling(x: pd.Series, pssm_bg_scores_df: pd.DataFrame):
-    pssm_bg_scores_series = pssm_bg_scores_df[x.name]
-    quantile_scores_list = []
+def quantile_scaling(x: pd.Series, sorted_bg_scores_dict: dict):
+    """
+    Compute quantile scores for the given series x using precomputed sorted background scores.
 
-    den = len(pssm_bg_scores_series)
+    Args:
+        x (pd.Series): Series of scores for a specific kinase.
+        sorted_bg_scores_dict (dict): Dictionary with kinase names as keys and sorted numpy arrays of background scores as values.
 
-    for i in range(len(x)):
-        num = (pssm_bg_scores_series <= x[i]).sum()
-        quantile_scores_list.append(num / den)
+    Returns:
+        pd.Series: Series of quantile scores corresponding to x.
+    """
+    sorted_bg_scores = sorted_bg_scores_dict[x.name]
+    x_values = x.values
+    
+    num = np.searchsorted(sorted_bg_scores, x_values, side='right')
+    den = len(sorted_bg_scores)
+    quantile_scores = num / den
 
-    scores = pd.Series(quantile_scores_list)
+    scores = pd.Series(quantile_scores, index=x.index)
     scores.name = x.name
 
     return scores
@@ -114,9 +122,15 @@ def score_sequence(seq_str: str, pssm_df: pd.DataFrame):
     p = 1
     for i in range(n_pos):
         if seq_str[i] != "_":
-            pos = list(pssm_df.index)[i]
-            p = p * pssm_df.loc[pos, seq_str[i]]
-
+            try:
+                pos = list(pssm_df.index)[i]
+                p = p * pssm_df.loc[pos, seq_str[i]]
+            except KeyError:
+                print("Non-canonical amino acid symbol found in sequence.")
+                print(
+                    f"'{seq_str[i]}' was found, but kinase PSSMs can handle the following symbols:"
+                )
+                print(f"{' '.join(AA_LIST)}")
     return p
 
 
@@ -132,24 +146,27 @@ def pssm_scoring(seq: str, pssm_df_dict: dict):
     return out_series
 
 
-def binarise_pssm_scores(scaled_scores: pd.DataFrame, n: int = 5):
-    """Binarise kinase PSSM scores given the number of top-scoring kinases that should be assigned to a phosphosite.
+def binarise_pssm_scores(scaled_scores: pd.DataFrame, n: int = 5, m: float = 0.95):
+    """Binarise kinase PSSM scores given the number of top-scoring kinases that should be assigned to a phosphosite and the minimum PSSM score quantile.
 
     Args:
         scaled_scores (pandas.DataFrame): kinase PSSM scores for a list of phosphosites; rows are phosphosites, columns are kinases.
-        n (int, optional): number of top scoring kinases to assign to each phopshosite. Defaults to 15.
+        n (int, optional): number of top scoring kinases to assign to each phopshosite. Defaults to 5.
+        m (float, optional): minimum PSSM score quantile that a phosphosite has to satisfy to be potentially assigned to a kinase. Defaults to 0.95.
 
     Returns:
         pandas.DataFrame: binarised kinase PSSM scores for the given phosphosites.
     """
 
     def find_bin_threshold(series: pd.Series):
+        
         sorted_values = sorted(series.values, reverse=True)
         threshold = sorted_values[n]
-
+        if threshold < m:
+            threshold = m
         series.loc[series > threshold] = 1
         series.loc[series <= threshold] = 0
-
+        
         return series
 
     binarised_scores = scaled_scores.apply(find_bin_threshold, axis=1)
@@ -164,18 +181,12 @@ def ks_statistic(
 ):
     kinase = deltas_series.name
 
-    running_sum = 0
-    running_sum_to_i = [0]
-
-    for i in range(len(deltas_series)):
-        running_sum = running_sum + deltas_series.iloc[i]
-        running_sum_to_i.append(running_sum)
-
-    max_ks = max(running_sum_to_i)
-    min_ks = min(running_sum_to_i)
+    cumsum = deltas_series.cumsum()
+    max_ks = cumsum.max()
+    min_ks = cumsum.min()
 
     if plot_bool:
-        data = pd.Series(running_sum_to_i)
+        data = pd.Series(cumsum)
 
         import matplotlib.pyplot as plt
         import seaborn as sns
@@ -231,9 +242,9 @@ def compute_ks(
     # make table of running sum deltas for each kinase
     running_sum_deltas_df = P_hit_df.copy()
     for kinase in running_sum_deltas_df.columns:
-        running_sum_deltas_df[kinase].loc[
-            running_sum_deltas_df[kinase] == 0
-        ] = P_miss_series[kinase]
+        running_sum_deltas_df[kinase].loc[running_sum_deltas_df[kinase] == 0] = (
+            P_miss_series[kinase]
+        )
 
     # compute ks for each kinase
     ks_series = running_sum_deltas_df.apply(
@@ -244,40 +255,30 @@ def compute_ks(
 
 
 def compute_null_ks(seqrnk_series: pd.Series, binarised_pssm_scores: pd.DataFrame):
-    # randomly permute phosphosites
-    idx_list = list(seqrnk_series.index)
-    shuffle(idx_list)
-    shuffled_binarised_pssm_scores = binarised_pssm_scores.copy()
-    shuffled_binarised_pssm_scores.index = idx_list
-    shuffled_binarised_pssm_scores = shuffled_binarised_pssm_scores.sort_index()
+    # Shuffle the rows of binarised_pssm_scores while keeping the index aligned
+    shuffled_binarised_pssm_scores = binarised_pssm_scores.sample(frac=1).reset_index(drop=True)
+    
+    # Compute number of non-hits for each kinase
+    Nnh_series = (shuffled_binarised_pssm_scores == 0).sum(axis=0)
 
-    # ranking metric for hits for each kinase
-    rj_df = shuffled_binarised_pssm_scores.apply(
-        lambda x: x * seqrnk_series.abs(), axis=0
-    )
-
-    # number of non-hits for each kinase
-    Nnh_series = rj_df.apply(lambda x: len(x.loc[x == 0]), axis=0)
-
-    # scale ranking metric for hits for each kinase
-    P_hit_df = rj_df.apply(lambda x: x / x.sum(), axis=0)
-
-    # assign decrement score for non-hits in order to sum to -1 for each kinase
+    seqrnk_abs_series = seqrnk_series.abs()
+    
+    # Compute ranking metric for hits
+    rj_df = shuffled_binarised_pssm_scores.mul(seqrnk_abs_series, axis=0)
+    
+    # Scale ranking metric for hits to sum to 1 for each kinase
+    P_hit_df = rj_df / rj_df.sum(axis=0)
+    
+    # Compute decrement score for non-hits
     P_miss_series = -1 / Nnh_series
-
-    # make table of absolute running sum deltas for each kinase
-    running_sum_deltas_df = P_hit_df.copy()
-    for kinase in running_sum_deltas_df.columns:
-        running_sum_deltas_df[kinase].loc[
-            running_sum_deltas_df[kinase] == 0
-        ] = P_miss_series[kinase]
-
-    # compute ks for each kinase
+    
+    # Compute running sum deltas: P_hit where hit, P_miss where miss
+    running_sum_deltas_df = P_hit_df.where(P_hit_df != 0, P_miss_series, axis=1)
+    
+    # Compute KS statistic for each kinase
     ks_series = running_sum_deltas_df.apply(ks_statistic, axis=0)
-
-    ks_df = pd.DataFrame([ks_series])
-
-    return ks_df
+    
+    return pd.DataFrame([ks_series])
 
 
 def compute_ks_empirical_distrib(
@@ -395,11 +396,12 @@ def compute_kinase_activities(
     n_perm: int = 1000,
     n_top_kinases: int = 5,
     min_n_hits: int = 4,
+    min_quantile: float = 0.95,
     n_proc: int = 1,
     plot_figures: bool = False,
     out_plot_dir: str = "phosx_output/",
-    ser_thr_only = False,
-    tyr_only = False
+    ser_thr_only=False,
+    tyr_only=False,
 ):
     warnings.simplefilter(action="ignore", category=FutureWarning)
 
@@ -423,23 +425,26 @@ def compute_kinase_activities(
                 zip(arg1, arg2),
                 ncols=80,
                 total=len(seq_series),
-                desc="   Scoring phosphopeptides   ",
+                desc="   Scoring phosphosites   ",
             ),
         )
+    if len(dfs_list) == 0:
+        return None
     pssm_scoring_df = pd.concat(dfs_list, axis=1).T
     pssm_scoring_df.index = list(range(len(seq_series)))
 
     print("Assigning kinases to targets : ", file=sys.stderr, end="")
     # quantile-scale the PSSM scores for each kinase
+    sorted_bg_scores_dict = {kinase: np.sort(pssm_bg_scores_df[kinase].values) for kinase in pssm_bg_scores_df.columns}
     pssm_scoring_scaled01_df = pssm_scoring_df.apply(
         quantile_scaling,
-        args=[pssm_bg_scores_df],
+        args=[sorted_bg_scores_dict],
         axis=0,
     )
 
     # binarise PSSM scores - TODO only return binarised_pssm_scores, don't change pssm_scoring_scaled01_df
     binarised_pssm_scores = binarise_pssm_scores(
-        pssm_scoring_scaled01_df, n=n_top_kinases
+        pssm_scoring_scaled01_df, n=n_top_kinases, m=min_quantile
     )
 
     # drop kinases with less than min_n_hits
@@ -480,6 +485,8 @@ def compute_kinase_activities(
     # compute activity score for all kinases
     results_df = compute_activity_score(results_df, np.log10(n_perm))
 
+    results_df["Activity Score"] = results_df["Activity Score"].round(decimals=4)
+
     print("DONE", file=sys.stderr, end="\n\n")
 
     return results_df
@@ -493,8 +500,9 @@ def kinase_activities(
     y_pssm_score_quantiles_h5_file: str,
     n_perm: int = 1000,
     s_t_n_top_kinases: int = 5,
-    y_n_top_kinases: int = 5,
+    y_n_top_kinases: int = 10,
     min_n_hits: int = 4,
+    min_quantile: float = 0.95,
     n_proc: int = 1,
     plot_figures: bool = False,
     out_plot_dir: str = "phosx_output",
@@ -502,6 +510,7 @@ def kinase_activities(
 ):
     print("> Computing differential activity of Ser/Thr kinases...", file=sys.stderr)
 
+    s_t_kinase_activity_df = pd.DataFrame()
     s_t_kinase_activity_df = compute_kinase_activities(
         seqrnk_file,
         s_t_pssm_h5_file,
@@ -509,15 +518,17 @@ def kinase_activities(
         n_perm,
         s_t_n_top_kinases,
         min_n_hits,
+        min_quantile,
         n_proc,
         plot_figures,
         out_plot_dir,
         True,
-        False
+        False,
     )
 
     print("> Computing differential activity of Tyr kinases...", file=sys.stderr)
 
+    y_kinase_activity_df = pd.DataFrame()
     y_kinase_activity_df = compute_kinase_activities(
         seqrnk_file,
         y_pssm_h5_file,
@@ -525,11 +536,12 @@ def kinase_activities(
         n_perm,
         y_n_top_kinases,
         min_n_hits,
+        min_quantile,
         n_proc,
         plot_figures,
         out_plot_dir,
         False,
-        True
+        True,
     )
 
     results_df = pd.concat([s_t_kinase_activity_df, y_kinase_activity_df], axis=0)
