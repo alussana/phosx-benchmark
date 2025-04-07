@@ -28,7 +28,9 @@ include { hernandez2017_make_seqrnk } from './modules/hernandez2017'
 include { hernandez2017_make_uniprot_seqrnk } from './modules/hernandez2017'
 include { hernandez2017_make_rnk } from './modules/hernandez2017'
 include { benchmark_phosx_hernandez2017 } from './modules/hernandez2017'
+include { benchmark_phosx1_hernandez2017 } from './modules/hernandez2017'
 include { benchmark_phosx_per_kinase_hernandez2017 } from './modules/hernandez2017'
+include { benchmark_phosx1_per_kinase_hernandez2017 } from './modules/hernandez2017'
 
 include { parse_cptac_dataset } from './modules/cptac'
 include { split_cptac_samples } from './modules/cptac'
@@ -53,6 +55,7 @@ include { benchmark_phosx_kinomics } from './modules/kinomics'
 include { pssm_background_scores } from './modules/phossea'
 
 include { run_phosx } from './modules/phosx'
+include { run_phosx_nouae } from './modules/phosx'
 
 include { get_kinex_scoring_matrix } from './modules/kinex'
 include { run_kinex } from './modules/kinex'
@@ -386,6 +389,23 @@ workflow PHOSX_HERNANDEZ2017 {
 }
 
 
+workflow PHOSXNOUAE_HERNANDEZ2017 {
+
+    take:
+        seqrnk
+        dict
+
+    main:
+        phosx_output = run_phosx_nouae( seqrnk, dict )
+                            .tsv
+                            .collect()
+
+    emit:
+        phosx_output
+
+}
+
+
 workflow PHOSX_CPTAC {
 
     take:
@@ -692,6 +712,39 @@ workflow BENCHMARK_PHOSX_HERNANDEZ2017 {
 }
 
 
+workflow BENCHMARK_PHOSX1_HERNANDEZ2017 {
+
+    take:
+        phosx_output
+        gsea_output
+        kinex_output
+        kstar_output
+        ptmsea_output
+        zscore_output
+        phosxnouae_output
+        metadata
+
+    main:
+        benchmark_phosx1_hernandez2017(phosx_output,
+                                      gsea_output,
+                                      kinex_output,
+                                      kstar_output,
+                                      ptmsea_output,
+                                      zscore_output,
+                                      phosxnouae_output,
+                                      metadata )
+        benchmark_phosx1_per_kinase_hernandez2017(phosx_output,
+                                      gsea_output,
+                                      kinex_output,
+                                      kstar_output,
+                                      ptmsea_output,
+                                      zscore_output,
+                                      phosxnouae_output,
+                                      metadata )
+
+}
+
+
 workflow BENCHMARK_PHOSX_CPTAC {
 
     take:
@@ -812,6 +865,8 @@ workflow {
     // run methods on hernandez2017
     phosx_hernandez2017 = PHOSX_HERNANDEZ2017( hernandez2017.seqrnk,
                                                string_id_dict )
+    phosxnouae_hernandez2017 = PHOSXNOUAE_HERNANDEZ2017( hernandez2017.seqrnk,
+                                                         string_id_dict )
     kinex_hernandez2017 = KINEX_HERNANDEZ2017( hernandez2017.seqrnk,
                                                string_id_dict,
                                                scoring_matrix )
@@ -848,13 +903,21 @@ workflow {
     
 
     // performance comparison on Hernandez2017
-    BENCHMARK_PHOSX_HERNANDEZ2017( phosx_hernandez2017,
+    /*BENCHMARK_PHOSX_HERNANDEZ2017( phosx_hernandez2017,
                                    gsea_hernandez2017,
                                    kinex_hernandez2017,
                                    kstar_hernandez2017,
                                    ptmsea_hernandez2017,
                                    zscore_hernandez2017,
-                                   hernandez2017.metadata )
+                                   hernandez2017.metadata )*/
+    BENCHMARK_PHOSX1_HERNANDEZ2017( phosx_hernandez2017,
+                                    gsea_hernandez2017,
+                                    kinex_hernandez2017,
+                                    kstar_hernandez2017,
+                                    ptmsea_hernandez2017,
+                                    zscore_hernandez2017,
+                                    phosxnouae_hernandez2017,
+                                    hernandez2017.metadata )
 
 
     // performance comparison on cptac

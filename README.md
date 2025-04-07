@@ -32,8 +32,6 @@ Finally set `params.n_cores` to the preferred number of cores that the workflow 
 nextflow run main.nf -resume -with-dag misc/flowchart.svg
 ```
 
-![flowchart](misc/flowchart.svg)
-
 ## Cite
 
 ### BioRxiv 
