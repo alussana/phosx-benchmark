@@ -31,6 +31,8 @@ include { benchmark_phosx_hernandez2017 } from './modules/hernandez2017'
 include { benchmark_phosx1_hernandez2017 } from './modules/hernandez2017'
 include { benchmark_phosx_per_kinase_hernandez2017 } from './modules/hernandez2017'
 include { benchmark_phosx1_per_kinase_hernandez2017 } from './modules/hernandez2017'
+include { link_kinase_annotations_to_metadata } from './modules/hernandez2017'
+include { visualize_kinase_annotations } from './modules/hernandez2017'
 
 include { parse_cptac_dataset } from './modules/cptac'
 include { split_cptac_samples } from './modules/cptac'
@@ -91,7 +93,7 @@ workflow GET_GENE_ID_DICT {
 }
 
 
-/*workflow Gene_Synonym__2__Gene_Name {
+workflow Gene_Synonym__2__Gene_Name {
 
     take:
         uniprot_id_dict
@@ -104,7 +106,7 @@ workflow GET_GENE_ID_DICT {
     emit:
         dict
 
-}*/
+}
 
 
 workflow GET_STRING_ID_DICT {
@@ -214,6 +216,7 @@ workflow HERNANDEZ2017_DATASET {
     take:
         uniprotac2ENSP_dict
         geneSynonym2geneName
+        gene_synonym_2_gene_name_dict
 
     main:
         dataset = parse_hernandez2017_dataset()
@@ -222,6 +225,10 @@ workflow HERNANDEZ2017_DATASET {
                 .map{file -> tuple( file.baseName, file )}
         //metadata = translate2col(dataset.metadata, geneSynonym2geneName )
         metadata = translate_hernandez2017_metadata( dataset.metadata, geneSynonym2geneName )
+        metadata_annotated = link_kinase_annotations_to_metadata( metadata,
+                                                                  gene_synonym_2_gene_name_dict,
+                                                                  kinase_metadata_h5 )
+        visualize_metadata = visualize_kinase_annotations( metadata_annotated )
         uniprot_rnk = hernandez2017_rnk_translate1col_w_dict( untranslated_rnk, uniprotac2ENSP_dict )
         seqrnk = hernandez2017_make_seqrnk( uniprot_rnk )
         uniprot_seqrnk = hernandez2017_make_uniprot_seqrnk( uniprot_rnk )
@@ -812,7 +819,7 @@ workflow {
 
 
     // get UniProt-based ID mapping dictionary: Gene Synonym --> Gene Name
-    //gene_synonym_2_gene_name_dict = Gene_Synonym__2__Gene_Name( gene_id_dict.uniprot_id_dict )
+    gene_synonym_2_gene_name_dict = Gene_Synonym__2__Gene_Name( gene_id_dict.uniprot_id_dict )
 
 
     // get alias table from STRING
@@ -842,7 +849,8 @@ workflow {
 
     // get hernandez2017 dataset
     hernandez2017 = HERNANDEZ2017_DATASET( gene_id_dict.uniprotac2ENSP_dict,
-                                           string_id_dict )
+                                           string_id_dict,
+                                           gene_synonym_2_gene_name_dict )
 
 
     // get cptac dataset

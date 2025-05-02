@@ -71,6 +71,61 @@ process translate_hernandez2017_metadata {
 
 
 /*
+Add family and specificity annotations to the metadata, from the PhosX metadata HDF5
+*/
+process link_kinase_annotations_to_metadata {
+
+    publishDir "${out_dir}", pattern: "datasets/hernandez2017/*tsv", mode: 'copy'
+
+    input:
+        path "input/metadata.tsv"
+        path "input/gene_synomym2gene_name_dict.tsv"
+        path "input/kinase_metadata.h5"
+
+    output:
+        path "datasets/hernandez2017/metadata_annotated.tsv"
+
+    script:
+    """
+    mkdir -p datasets/hernandez2017
+    
+    link_kinase_annotations_to_metadata.py \
+        input/metadata.tsv \
+        input/gene_synomym2gene_name_dict.tsv \
+        input/kinase_metadata.h5 \
+        > datasets/hernandez2017/metadata_annotated.tsv
+    """
+
+}
+
+
+/*
+[...]
+*/
+process visualize_kinase_annotations {
+
+    publishDir "${out_dir}", pattern: "datasets/hernandez2017/*pdf", mode: 'copy'
+
+    input:
+        path "input/metadata.tsv"
+
+    output:
+        path "datasets/hernandez2017/*.pdf"
+
+    script:
+    """
+    mkdir -p datasets/hernandez2017
+
+    visualize_kinase_annotations.py \
+        input/metadata.tsv \
+        datasets/hernandez2017/kinase_family_regulation_counts.pdf \
+        datasets/hernandez2017/kinase_specificity_regulation_counts.pdf
+    """
+
+}
+
+
+/*
 translate all the words in the first field of input/file.tsv 
 specified in the second tab-separated column of input/dict.tsv
 with the corresponding word found in the first column

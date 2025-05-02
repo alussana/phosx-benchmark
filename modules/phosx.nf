@@ -28,7 +28,7 @@ process run_phosx {
 
     script:
     """
-    CACHEBUST=1
+    CACHEBUST=discipline
     
     mkdir -p PhosX/${id}
     
