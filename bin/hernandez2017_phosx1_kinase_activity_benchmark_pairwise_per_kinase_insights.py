@@ -133,6 +133,7 @@ def make_kinase_activity_df(
         if len(df.columns) == 0:
             df = pd.read_csv(data_path_dict[data_id], sep=",", index_col=0)
         series = df[kinase_activity_metric]
+        series.fillna(0, inplace=True)
         series.name = data_id
         kinase_activity_df = kinase_activity_df.join(series, how="outer")
     # normalise and scale

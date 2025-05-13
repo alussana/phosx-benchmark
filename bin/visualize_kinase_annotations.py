@@ -63,11 +63,11 @@ def plot_kinase_family_regulation_counts(df, x_labels, bar_pdf):
     )
 
     # Define a color palette
-    palette = {"Inhibition": "blue", "Activation": "red"}
+    palette = {"Activation": (1, 0, 0, 0.5), "Inhibition": (0, 0, 1, 0.5)}
 
     legend_elements = [
-        Patch(facecolor="blue", label="Activation"),
-        Patch(facecolor="red", label="Inhibition"),
+        Patch(facecolor=(1, 0, 0, 0.5), label="Activation"),
+        Patch(facecolor=(0, 0, 1, 0.5), label="Inhibition"),
     ]
 
     # Create the barplot
@@ -123,11 +123,11 @@ def plot_kinase_specificity_regulation_counts(df, x_labels, bar_pdf):
     )
 
     # Define a color palette
-    palette = {"Inhibition": "blue", "Activation": "red"}
+    palette = {"Activation": (1, 0, 0, 0.5), "Inhibition": (0, 0, 1, 0.5)}
 
     legend_elements = [
-        Patch(facecolor="blue", label="Activation"),
-        Patch(facecolor="red", label="Inhibition"),
+        Patch(facecolor=(1, 0, 0, 0.5), label="Activation"),
+        Patch(facecolor=(0, 0, 1, 0.5), label="Inhibition"),
     ]
 
     # Create the barplot

@@ -28,24 +28,25 @@ process run_phosx {
 
     script:
     """
-    CACHEBUST=discipline
+    CACHEBUST=42
     
     mkdir -p PhosX/${id}
     
     phosx \
         input/input.seqrnk \
-        -n ${params.phosx_n_perm} \
-        -c ${params.n_cores} \
-        -mp ${params.phosx_min_quantile} \
-        -stk ${params.phosx_s_t_n_top_kinases} \
-        -yk ${params.phosx_y_n_top_kinases} \
-        -mh ${params.phosx_min_n_hits} \
-        -astqth ${params.phosx_st_qth} \
-        -ayqth ${params.phosx_y_qth} \
-        -urt ${params.phosx_upreg_redundancy_threshold} \
-        -drt ${params.phosx_downreg_redundancy_threshold} \
-        -df1 ${params.phosx_decay_factor} \
-        -d PhosX/${id} \
+        --n-permutations ${params.phosx_n_perm} \
+        --n-proc ${params.n_cores} \
+        --s-t-min-quantile ${params.phosx_s_t_min_quantile} \
+        --y-min-quantile ${params.phosx_y_min_quantile} \
+        --s-t-n-top-kinases ${params.phosx_s_t_n_top_kinases} \
+        --y-n-top-kinases ${params.phosx_y_n_top_kinases} \
+        --min-n-hits ${params.phosx_min_n_hits} \
+        --a-loop-s-t-quantile-threshold ${params.phosx_st_qth} \
+        --a-loop-y-quantile-threshold ${params.phosx_y_qth} \
+        --upreg-redundancy-threshold ${params.phosx_upreg_redundancy_threshold} \
+        --downreg-redundancy-threshold ${params.phosx_downreg_redundancy_threshold} \
+        --decay-factor ${params.phosx_decay_factor} \
+        --output-dir PhosX/${id} \
         > PhosX/${id}_untranslated.tsv
 
     translate_phosx_output.py \
@@ -90,14 +91,15 @@ process run_phosx_nouae {
     
     phosx \
         input/input.seqrnk \
-        -no-uae \
-        -n ${params.phosx_n_perm} \
-        -c ${params.n_cores} \
-        -mp ${params.phosx_min_quantile} \
-        -stk ${params.phosx_s_t_n_top_kinases} \
-        -yk ${params.phosx_y_n_top_kinases} \
-        -mh ${params.phosx_min_n_hits} \
-        -d PhosXNouae/${id} \
+        --no-upstream-activation-evidence \
+        --n-permutations ${params.phosx_n_perm} \
+        --n-proc ${params.n_cores} \
+        --s-t-min-quantile ${params.phosx_s_t_min_quantile} \
+        --y-min-quantile ${params.phosx_y_min_quantile} \
+        --s-t-n-top-kinases ${params.phosx_s_t_n_top_kinases} \
+        --y-n-top-kinases ${params.phosx_y_n_top_kinases} \
+        --min-n-hits ${params.phosx_min_n_hits} \
+        --output-dir PhosXNouae/${id} \
         > PhosXNouae/${id}_untranslated.tsv
 
     translate_phosx_output.py \

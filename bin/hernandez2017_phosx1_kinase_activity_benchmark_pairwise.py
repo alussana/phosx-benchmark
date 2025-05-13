@@ -237,6 +237,7 @@ def make_kinase_activity_df(
         if len(df.columns) == 0:
             df = pd.read_csv(data_path_dict[data_id], sep=",", index_col=0)
         series = df[kinase_activity_metric]
+        series.fillna(0, inplace=True)
         series.name = data_id
         kinase_activity_df = kinase_activity_df.join(series, how="outer")
     # normalise and scale
@@ -368,39 +369,39 @@ def pairwise_comparison(
     )
     downreg_true_kinase_quantile_df.columns = ["Method", "Normalized rank"]
     plt.clf()
-    plt.figure(figsize=[2.2, 2.2])
+    plt.figure(figsize=[2.5, 2.5])
     ax = sns.violinplot(
         data=joined_true_kinase_quantile_df,
         x="Method",
         y="Normalized rank",
         cut=0,
-        hue="Method",
+        #hue="Method",
     )
     #ax.set_yticks(np.arange(0, 1.1, 0.1))
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_joined_true_kinase_quantile.pdf")
     plt.clf()
-    plt.figure(figsize=[2.2, 2.2])
+    plt.figure(figsize=[2.5, 2.5])
     ax = sns.violinplot(
         data=upreg_true_kinase_quantile_df,
         x="Method",
         y="Normalized rank",
         cut=0,
-        hue="Method",
+        #hue="Method",
     )
     #ax.set_yticks(np.arange(0, 1.1, 0.1))
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_upreg_true_kinase_quantile.pdf")
     plt.clf()
-    plt.figure(figsize=[2.2, 2.2])
+    plt.figure(figsize=[2.5, 2.5])
     ax = sns.violinplot(
         data=downreg_true_kinase_quantile_df,
         x="Method",
         y="Normalized rank",
         cut=0,
-        hue="Method",
+        #hue="Method",
     )
     #ax.set_yticks(np.arange(0, 1.1, 0.1))
     sns.despine()
@@ -725,8 +726,9 @@ def pairwise_comparison(
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_joined_auc_prc_violinplots_w_title.pdf")
+
     plt.clf()
-    plt.figure(figsize=[2.2, 2.2])
+    plt.figure(figsize=[2.5, 2.5])
     ax = sns.violinplot(
         data=violinplots_upreg_df, x="Metric", y="Value", hue="Method", cut=0
     )
@@ -738,7 +740,7 @@ def pairwise_comparison(
     plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_upreg_auc_prc_violinplots.pdf")
 
     plt.clf()
-    plt.figure(figsize=[2.2, 2.2])
+    plt.figure(figsize=[2.5, 2.5])
     ax = sns.violinplot(
         data=violinplots_downreg_df, x="Metric", y="Value", hue="Method", cut=0
     )
@@ -749,7 +751,7 @@ def pairwise_comparison(
     plt.tight_layout()
     plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_downreg_auc_prc_violinplots.pdf")
     plt.clf()
-    plt.figure(figsize=[2.2, 2.2])
+    plt.figure(figsize=[2.5, 2.5])
     ax = sns.violinplot(
         data=violinplots_joined_df, x="Metric", y="Value", hue="Method", cut=0
     )
@@ -931,9 +933,10 @@ def main():
     input_list_kstar_txt = 'input_files_kstar.txt'
     input_list_ptmsea_txt = 'input_files_ptmsea.txt'
     input_list_zscore_txt = 'input_files_zscore.txt'
+    input_list_phosxnouae_txt = 'input_files_phosxnouae.txt'
     metadata_tsv = 'input/metadata.tsv'
     kinase_activity_metric_str = 'Activity Score'
-    out_prefix = 'kinase_activity_benchmark/hernandez2017/intersection/'
+    out_prefix = 'kinase_activity_benchmark/hernandez2017/pairwise/'
     """
     
     

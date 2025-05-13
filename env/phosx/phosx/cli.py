@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
-from os import path
+from os import path, makedirs
 import sys
 import pandas as pd
 from phosx.kinase_activity import compute_kinase_activities
 from phosx.activation_evidence import compute_activation_evidence
+
 
 def parse_phosx_args():
     parser = argparse.ArgumentParser(
@@ -57,8 +58,10 @@ def parse_phosx_args():
         "-meta",
         "--kinase-metadata",
         type=str,
-        default=str(path.join(path.dirname(__file__), "data/kinase_metadata.h5")),
-        help="Path to the h5 file storing kinase metadata (\"aloop_seq\"); defaults to built-in metadata",
+        default=str(
+            path.join(path.dirname(__file__), "data/kinase_metadata_annotated.h5")
+        ),
+        help='Path to the h5 file storing kinase metadata ("aloop_seq"); defaults to built-in metadata',
     )
     parser.add_argument(
         "-n",
@@ -72,13 +75,13 @@ def parse_phosx_args():
         "--s-t-n-top-kinases",
         type=int,
         default=5,
-        help="Number of top-scoring Ser/Thr kinases potentially associatiated to a given phosphosite; default: 5",
+        help="Number of top-scoring Ser/Thr kinases potentially associatiated to a given phosphosite; default: 10",
     )
     parser.add_argument(
         "-yk",
         "--y-n-top-kinases",
         type=int,
-        default=5,
+        default=10,
         help="Number of top-scoring Tyr kinases potentially associatiated to a given phosphosite; default: 5",
     )
     parser.add_argument(
@@ -99,15 +102,15 @@ def parse_phosx_args():
         "-urt",
         "--upreg-redundancy-threshold",
         type=float,
-        default=0.8,
-        help="Minimum Jaccard index of target substrates to consider two upregulated kinase having correlated activity; upstream activation evidence is used to prioritize the activity of individual ones; default: 0.8",
+        default=0.5,
+        help="Minimum Jaccard index of target substrates to consider two upregulated kinases having potentially correlated activity; upstream activation evidence is used to prioritize the activity of individual ones; default: 0.5",
     )
     parser.add_argument(
         "-drt",
         "--downreg-redundancy-threshold",
         type=float,
-        default=0.7,
-        help="Minimum Jaccard index of target substrates to consider two downregulated kinase having correlated activity; upstream activation evidence is used to prioritize the activity of individual ones; default: 0.7",
+        default=0.5,
+        help="Minimum Jaccard index of target substrates to consider two downregulated kinases having potentially correlated activity; upstream activation evidence is used to prioritize the activity of individual ones; default: 0.5",
     )
     parser.add_argument(
         "-mh",
@@ -117,11 +120,18 @@ def parse_phosx_args():
         help="Minimum number of phosphosites associated with a kinase for the kinase to be considered in the analysis; default: 4",
     )
     parser.add_argument(
-        "-mp",
-        "--min-quantile",
+        "-stmq",
+        "--s-t-min-quantile",
         type=float,
         default=0.95,
-        help="Minimum PSSM score quantile that a phosphosite has to satisfy to be potentially assigned to a kinase; default: 0.95",
+        help="Minimum PSSM score quantile that a phosphosite has to satisfy to be potentially assigned to a Ser/Thr kinase; default: 0.95",
+    )
+    parser.add_argument(
+        "-ymq",
+        "--y-min-quantile",
+        type=float,
+        default=0.90,
+        help="Minimum PSSM score quantile that a phosphosite has to satisfy to be potentially assigned to a Tyr kinase; default: 0.90",
     )
     parser.add_argument(
         "-df1",
@@ -150,17 +160,24 @@ def parse_phosx_args():
         help="Output files directory; only relevant if used with --plot_figures; defaults to 'phosx_output/'",
     )
     parser.add_argument(
+        "-nd",
+        "--network-path",
+        type=str,
+        default=None,
+        help="Output file path for the inferred Kinase-->A-loop network; if not specified, the network will not be saved",
+    )
+    parser.add_argument(
         "-o",
         "--output-path",
         type=str,
         default=None,
-        help="Main output table; if not specified it will be printed in STDOUT",
+        help="Main output table with differential kinase activitiy scores; if not specified it will be printed in STDOUT",
     )
     parser.add_argument(
         "-v",
         "--version",
         action="version",
-        version="0.11.1",
+        version="0.16.0",
         help="Print package version and exit",
     )
     args = parser.parse_args()
@@ -169,25 +186,37 @@ def parse_phosx_args():
 
 def phosx(
     seqrnk_file: str,
-    s_t_pssm_h5_file: str = str(path.join(path.dirname(__file__), "../phosx/data/S_T_PSSMs.h5")),
-    s_t_pssm_score_quantiles_h5_file: str = str(path.join(path.dirname(__file__), "../phosx/data/S_T_PSSM_score_quantiles.h5")),
-    y_pssm_h5_file: str = str(path.join(path.dirname(__file__), "../phosx/data/Y_PSSMs.h5")),
-    y_pssm_score_quantiles_h5_file: str = str(path.join(path.dirname(__file__), "../phosx/data/Y_PSSM_score_quantiles.h5")),
+    s_t_pssm_h5_file: str = str(
+        path.join(path.dirname(__file__), "../phosx/data/S_T_PSSMs.h5")
+    ),
+    s_t_pssm_score_quantiles_h5_file: str = str(
+        path.join(path.dirname(__file__), "../phosx/data/S_T_PSSM_score_quantiles.h5")
+    ),
+    y_pssm_h5_file: str = str(
+        path.join(path.dirname(__file__), "../phosx/data/Y_PSSMs.h5")
+    ),
+    y_pssm_score_quantiles_h5_file: str = str(
+        path.join(path.dirname(__file__), "../phosx/data/Y_PSSM_score_quantiles.h5")
+    ),
     n_perm: int = 10000,
     s_t_n_top_kinases: int = 5,
     y_n_top_kinases: int = 10,
     min_n_hits: int = 4,
-    min_quantile: float = 0.95,
+    s_t_min_quantile: float = 0.95,
+    y_min_quantile: float = 0.90,
     no_upstream_activation_evidence: bool = False,
-    metadata_h5_file: str = str(path.join(path.dirname(__file__), "../phosx/data/kinase_metadata.h5")),
+    metadata_h5_file: str = str(
+        path.join(path.dirname(__file__), "../phosx/data/kinase_metadata.h5")
+    ),
     a_loop_s_t_quantile_threshold: int = 0.95,
-    a_loop_y_quantile_threshold: int = 0.95,
-    upreg_redundancy_threshold: float = 0.8,
-    downreg_redundancy_threshold: float = 0.7,
+    a_loop_y_quantile_threshold: int = 0.90,
+    upreg_redundancy_threshold: float = 0.5,
+    downreg_redundancy_threshold: float = 0.5,
     decay_factor: float = 64,
     n_proc: int = 1,
     plot_figures: bool = False,
     out_plot_dir: str = "phosx_output",
+    network_path=None,
     out_path=None,
 ):
     print("> Computing differential activity of Ser/Thr kinases...", file=sys.stderr)
@@ -200,7 +229,7 @@ def phosx(
         n_perm,
         s_t_n_top_kinases,
         min_n_hits,
-        min_quantile,
+        s_t_min_quantile,
         n_proc,
         plot_figures,
         out_plot_dir,
@@ -218,7 +247,7 @@ def phosx(
         n_perm,
         y_n_top_kinases,
         min_n_hits,
-        min_quantile,
+        y_min_quantile,
         n_proc,
         plot_figures,
         out_plot_dir,
@@ -229,9 +258,12 @@ def phosx(
     activity_df = pd.concat([s_t_kinase_activity_df, y_kinase_activity_df], axis=0)
 
     if no_upstream_activation_evidence == False:
-        print("> Computing upstream activation evidence (upregulation) ...", file=sys.stderr)
+        print(
+            "> Computing upstream activation evidence (upregulation) ...",
+            file=sys.stderr,
+        )
 
-        upreg_activation_series = compute_activation_evidence(
+        upreg_activation_series, network = compute_activation_evidence(
             activity_df,
             s_t_assigned_substrates_df,
             y_assigned_substrates_df,
@@ -251,9 +283,12 @@ def phosx(
             out_path,
         )
 
-        print("> Computing downstream activation evidence (downregulation) ...", file=sys.stderr)
+        print(
+            "> Computing upstream activation evidence (downregulation) ...",
+            file=sys.stderr,
+        )
 
-        downreg_activation_series = compute_activation_evidence(
+        downreg_activation_series, network = compute_activation_evidence(
             activity_df,
             s_t_assigned_substrates_df,
             y_assigned_substrates_df,
@@ -273,42 +308,62 @@ def phosx(
             out_path,
         )
 
-        activation_evidence_series = pd.concat([upreg_activation_series, downreg_activation_series], axis=0).loc[list(activity_df.index)]
+        activity_df = activity_df.rename(
+            columns={"Activity Score": "Legacy Activity Score"}
+        )
+        activity_df.loc[upreg_activation_series.index, "Activity Score"] = (
+            upreg_activation_series
+        )
+        activity_df.loc[downreg_activation_series.index, "Activity Score"] = (
+            downreg_activation_series
+        )
 
-        #activity_df = activity_df.rename(columns={"Activity Score": "Legacy Activity Score"})
-
-        activity_df["Activity Score"] = activation_evidence_series
+    # add the activity scores to the network
+    network.add_activity_scores(activity_df["Activity Score"].to_dict())
 
     # export results
     if out_path == None:
-        print(activity_df.to_csv(sep="\t", header=True, index=True))
+        print(activity_df.to_csv(sep="\t", na_rep="NA", header=True, index=True))
     else:
-        activity_df.to_csv(out_path, sep="\t", header=True, index=True)
+        activity_df.to_csv(out_path, na_rep="NA", sep="\t", header=True, index=True)
 
-    return activity_df  
+    if network_path is not None:
+        network_df = pd.DataFrame.from_dict(network.get_edges_dict(), orient="columns")
+        network_df["complementarity"] = network_df["complementarity"].round(
+            decimals=2
+        )
+        network_df.to_csv(
+            f"{network_path}",
+            sep="\t",
+            na_rep="NA",
+            header=True,
+            index=False,
+        )
+
+    return activity_df
 
 
 def main():
     print(
         f"""    
-  ██████╗░██╗░░██╗░█████╗░░██████╗██╗░░██╗
-  ██╔══██╗██║░░██║██╔══██╗██╔════╝╚██╗██╔╝
-  ██████╔╝███████║██║░░██║╚█████╗░░╚███╔╝░
-  ██╔═══╝░██╔══██║██║░░██║░╚═══██╗░██╔██╗░
-  ██║░░░░░██║░░██║╚█████╔╝██████╔╝██╔╝╚██╗
-  ╚═╝░░░░░╚═╝░░╚═╝░╚════╝░╚═════╝░╚═╝░░╚═╝
-  
-  Version 0.11.1
-  Copyright (C) 2025 Alessandro Lussana
-  Licence Apache 2.0
-  
-  Command: {' '.join(sys.argv)}
+██████╗░██╗░░██╗░█████╗░░██████╗██╗░░██╗
+██╔══██╗██║░░██║██╔══██╗██╔════╝╚██╗██╔╝
+██████╔╝███████║██║░░██║╚█████╗░░╚███╔╝░
+██╔═══╝░██╔══██║██║░░██║░╚═══██╗░██╔██╗░
+██║░░░░░██║░░██║╚█████╔╝██████╔╝██╔╝╚██╗
+╚═╝░░░░░╚═╝░░╚═╝░╚════╝░╚═════╝░╚═╝░░╚═╝
+
+Version 0.16.0
+Copyright (C) 2025 Alessandro Lussana
+Licence Apache 2.0
+
+Command: {' '.join(sys.argv)}
     """,
         file=sys.stderr,
     )
 
     args = parse_phosx_args()
-    
+
     phosx(
         args.seqrnk,
         args.s_t_pssm,
@@ -319,7 +374,8 @@ def main():
         args.s_t_n_top_kinases,
         args.y_n_top_kinases,
         args.min_n_hits,
-        args.min_quantile,
+        args.s_t_min_quantile,
+        args.y_min_quantile,
         args.no_upstream_activation_evidence,
         args.kinase_metadata,
         args.a_loop_s_t_quantile_threshold,
@@ -330,6 +386,7 @@ def main():
         args.n_proc,
         args.plot_figures,
         args.output_dir,
+        args.network_path,
         args.output_path,
     )
 
