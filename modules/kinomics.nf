@@ -300,12 +300,6 @@ process kinomics_rnk_translate1col_w_dict {
 
 
 /*
-compute and plot distributions of auroc and precision at recall 50%, with the
-same procedure as in kinomics
-<https://doi.org/10.1093/bioinformatics/btx082>
-i.e. take positive kinase-condition pairs, create negative set by drawing the
-same number of random  combinations of kinase-conditions pairs that are not in the positive set.
-Compute AUROC and AUPR. Reapeat 100 times.
 [...]
 */
 process benchmark_phosx_kinomics {
@@ -317,6 +311,7 @@ process benchmark_phosx_kinomics {
         path 'input/gsea/*.csv'
         path 'input/kinex/*.tsv'
         path 'input/kstar/*.tsv'
+        path 'input/phosxnouae/*.tsv'
         path 'input/metadata.tsv'
 
     output:
@@ -324,11 +319,18 @@ process benchmark_phosx_kinomics {
 
     script:
     """
+    if [ -z "\${PYTHONPATH:-}" ]; then \\
+        export PYTHONPATH="${projectDir}/src"; \\
+    else \\
+        export PYTHONPATH="${projectDir}/src:\$PYTHONPATH"; \\
+    fi
+
     mkdir -p kinase_activity_benchmark/kinomics/pairwise/
     mkdir -p data/phosx
     mkdir -p data/gsea
     mkdir -p data/kinex
     mkdir -p data/kstar
+    mkdir -p data/phosxnouae
 
     for file in \$(ls input/phosx/); do \
         linkpath=\$(readlink -f input/phosx/"\$file"); \
@@ -386,11 +388,143 @@ process benchmark_phosx_kinomics {
     cat paths_kstar.txt | sort -g > input_files_kstar.txt
 
 
+    for file in \$(ls input/phosxnouae/); do \
+        linkpath=\$(readlink -f input/phosxnouae/"\$file"); \
+        echo "\$linkpath" >> symlink_paths_phosxnouae.txt; \
+    done
+
+    for file in \$(cat symlink_paths_phosxnouae.txt); do \
+        name_dot_tsv=\$(basename "\$file"); \
+        cp \$file data/phosxnouae/\$name_dot_tsv; \
+        echo data/phosxnouae/\$name_dot_tsv >> paths_phosxnouae.txt; \
+    done
+
+    cat paths_phosxnouae.txt | sort -g > input_files_phosxnouae.txt
+
+
     kinomics_phosx_kinase_activity_benchmark_pairwise.py \
         input_files_phosx.txt \
         input_files_gsea.txt \
         input_files_kinex.txt \
         input_files_kstar.txt \
+        input_files_phosxnouae.txt \
+        input/metadata.tsv \
+        "${params.kinase_activity_metric}" \
+        kinase_activity_benchmark/kinomics/pairwise/
+    """
+
+}
+
+
+/*
+[...]
+*/
+process benchmark_phosx_per_kinase_kinomics {
+
+    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/kinomics/pairwise/*.pdf", mode: 'copy'
+
+    input:
+        path 'input/phosx/*.tsv'
+        path 'input/gsea/*.csv'
+        path 'input/kinex/*.tsv'
+        path 'input/kstar/*.tsv'
+        path 'input/phosxnouae/*.tsv'
+        path 'input/metadata.tsv'
+
+    output:
+        path "kinase_activity_benchmark/kinomics/pairwise/*.pdf"
+
+    script:
+    """
+    if [ -z "\${PYTHONPATH:-}" ]; then \\
+        export PYTHONPATH="${projectDir}/src"; \\
+    else \\
+        export PYTHONPATH="${projectDir}/src:\$PYTHONPATH"; \\
+    fi
+
+    mkdir -p kinase_activity_benchmark/kinomics/pairwise/
+    mkdir -p data/phosx
+    mkdir -p data/gsea
+    mkdir -p data/kinex
+    mkdir -p data/kstar
+    mkdir -p data/phosxnouae
+
+    for file in \$(ls input/phosx/); do \
+        linkpath=\$(readlink -f input/phosx/"\$file"); \
+        echo "\$linkpath" >> symlink_paths_phosx.txt; \
+    done
+
+    for file in \$(cat symlink_paths_phosx.txt); do \
+        name_dot_tsv=\$(basename "\$file"); \
+        cp \$file data/phosx/\$name_dot_tsv; \
+        echo data/phosx/\$name_dot_tsv >> paths_phosx.txt; \
+    done
+
+    cat paths_phosx.txt | sort -g > input_files_phosx.txt
+
+
+    for file in \$(ls input/gsea/); do \
+        linkpath=\$(readlink -f input/gsea/"\$file"); \
+        echo "\$linkpath" >> symlink_paths_gsea.txt; \
+    done
+
+    for file in \$(cat symlink_paths_gsea.txt); do \
+        name_dot_tsv=\$(basename "\$file"); \
+        cp \$file data/gsea/\$name_dot_tsv; \
+        echo data/gsea/\$name_dot_tsv >> paths_gsea.txt; \
+    done
+
+    cat paths_gsea.txt | sort -g > input_files_gsea.txt
+
+
+    for file in \$(ls input/kinex/); do \
+        linkpath=\$(readlink -f input/kinex/"\$file"); \
+        echo "\$linkpath" >> symlink_paths_kinex.txt; \
+    done
+
+    for file in \$(cat symlink_paths_kinex.txt); do \
+        name_dot_tsv=\$(basename "\$file"); \
+        cp \$file data/kinex/\$name_dot_tsv; \
+        echo data/kinex/\$name_dot_tsv >> paths_kinex.txt; \
+    done
+
+    cat paths_kinex.txt | sort -g > input_files_kinex.txt
+
+
+    for file in \$(ls input/kstar/); do \
+        linkpath=\$(readlink -f input/kstar/"\$file"); \
+        echo "\$linkpath" >> symlink_paths_kstar.txt; \
+    done
+
+    for file in \$(cat symlink_paths_kstar.txt); do \
+        name_dot_tsv=\$(basename "\$file"); \
+        cp \$file data/kstar/\$name_dot_tsv; \
+        echo data/kstar/\$name_dot_tsv >> paths_kstar.txt; \
+    done
+
+    cat paths_kstar.txt | sort -g > input_files_kstar.txt
+
+
+    for file in \$(ls input/phosxnouae/); do \
+        linkpath=\$(readlink -f input/phosxnouae/"\$file"); \
+        echo "\$linkpath" >> symlink_paths_phosxnouae.txt; \
+    done
+
+    for file in \$(cat symlink_paths_phosxnouae.txt); do \
+        name_dot_tsv=\$(basename "\$file"); \
+        cp \$file data/phosxnouae/\$name_dot_tsv; \
+        echo data/phosxnouae/\$name_dot_tsv >> paths_phosxnouae.txt; \
+    done
+
+    cat paths_phosxnouae.txt | sort -g > input_files_phosxnouae.txt
+
+    
+    kinomics_phosx_kinase_activity_benchmark_pairwise_per_kinase_insights.py \
+        input_files_phosx.txt \
+        input_files_gsea.txt \
+        input_files_kinex.txt \
+        input_files_kstar.txt \
+        input_files_phosxnouae.txt \
         input/metadata.tsv \
         "${params.kinase_activity_metric}" \
         kinase_activity_benchmark/kinomics/pairwise/

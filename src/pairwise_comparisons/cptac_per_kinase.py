@@ -2,7 +2,6 @@
 
 import pandas as pd
 import numpy as np
-import sys
 import matplotlib.pyplot as plt
 import os
 from itertools import product
@@ -35,7 +34,7 @@ def scale_01(df):
     return scaled_df
 
 
-def top5percentKinases(
+def top10percentKinases(
     kinase_activity_df, regulation_df, metadata_experiments_set
 ):
     df = pd.DataFrame()
@@ -66,7 +65,7 @@ def top5percentKinases(
                 if len(rank_k) == 0:
                     next
                 else:
-                    if rank_k.values[0] / n_ranks >= 0.95:
+                    if rank_k.values[0] / n_ranks > 0.9:
                         rank_k.iloc[0] = 1
                     else:
                         rank_k.iloc[0] = 0
@@ -74,7 +73,7 @@ def top5percentKinases(
     return df
 
 
-def bottom5percentKinases(
+def bottom10percentKinases(
     kinase_activity_df, regulation_df, metadata_experiments_set
 ):
     df = pd.DataFrame()
@@ -105,7 +104,7 @@ def bottom5percentKinases(
                 if len(rank_k) == 0:
                     next
                 else:
-                    if rank_k.values[0] / n_ranks <= 0.05:
+                    if rank_k.values[0] / n_ranks < 0.1:
                         rank_k.iloc[0] = 1
                     else:
                         rank_k.iloc[0] = 0
@@ -136,6 +135,15 @@ def make_kinase_activity_df(
         series.fillna(0, inplace=True)
         series.name = data_id
         kinase_activity_df = kinase_activity_df.join(series, how="outer")
+    # Get columns that can be successfully converted to float
+    convertible_columns = []
+    for col in kinase_activity_df.columns:
+        try:
+            pd.to_numeric(kinase_activity_df[col], errors='raise')
+            convertible_columns.append(col)
+        except (ValueError, TypeError):
+            pass
+    kinase_activity_df = kinase_activity_df[convertible_columns]
     # normalise and scale
     kinase_activity_df = quantile_normalize(kinase_activity_df)
     kinase_activity_df = scale_01(kinase_activity_df)
@@ -156,7 +164,7 @@ def make_kinase_activity_df(
         lambda x: f'{x["Experiment"]}__{x["Kinase"]}', axis=1
     )
     kinase_activity_df.to_csv(
-        f"{out_prefix}hernandez2017_kinase_activity_{method_name}.tsv",
+        f"{out_prefix}cptac_kinase_activity_{method_name}.tsv",
         header=True,
         index=True,
         sep="\t",
@@ -183,13 +191,13 @@ def pairwise_comparison(
     upregulation_df = metadata_df.loc[metadata_df["Regulation"] == 1]
     downregulation_df = metadata_df.loc[metadata_df["Regulation"] == -1]
     upregulation_df.to_csv(
-        f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_upregulated.tsv",
+        f"{out_prefix}cptac_{method_1_name}_{method_2_name}_upregulated.tsv",
         header=True,
         index=True,
         sep="\t"
     )
     downregulation_df.to_csv(
-        f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_downregulated.tsv",
+        f"{out_prefix}cptac_{method_1_name}_{method_2_name}_downregulated.tsv",
         header=True,
         index=True,
         sep="\t",
@@ -206,43 +214,43 @@ def pairwise_comparison(
     downregulation_negative_indexes_list = list(
         possible_indexes_set.difference(set(downregulation_df.index))
     )
-    # top 5% kinases true positives performance per-kinase count
-    method_1_top5percentKinases_df = (
-        top5percentKinases(
+    # top 10% kinases true positives performance per-kinase count
+    method_1_top10percentKinases_df = (
+        top10percentKinases(
             kinase_activity_method_1_df, upregulation_df, metadata_experiments_set
         )
     )
-    method_2_top5percentKinases_df = (
-        top5percentKinases(
+    method_2_top10percentKinases_df = (
+        top10percentKinases(
             kinase_activity_method_2_df, upregulation_df, metadata_experiments_set
         )
     )
-    method_1_bottom5percentKinases_df = (
-        bottom5percentKinases(
+    method_1_bottom10percentKinases_df = (
+        bottom10percentKinases(
             kinase_activity_method_1_df, downregulation_df, metadata_experiments_set
         )
     )
-    method_2_bottom5percentKinases_df = (
-        bottom5percentKinases(
+    method_2_bottom10percentKinases_df = (
+        bottom10percentKinases(
             kinase_activity_method_2_df, downregulation_df, metadata_experiments_set
         )
     )
-    method_1_joined5percentKinases_df = pd.concat(
-        [method_1_top5percentKinases_df, method_1_bottom5percentKinases_df]
+    method_1_joined10percentKinases_df = pd.concat(
+        [method_1_top10percentKinases_df, method_1_bottom10percentKinases_df]
     )
-    method_2_joined5percentKinases_df = pd.concat(
-        [method_2_top5percentKinases_df, method_2_bottom5percentKinases_df]
+    method_2_joined10percentKinases_df = pd.concat(
+        [method_2_top10percentKinases_df, method_2_bottom10percentKinases_df]
     )
-    method_1_joined5percentKinases_df["Kinase"] = method_1_joined5percentKinases_df.index
-    method_1_joined5percentKinases_df["Kinase"] = method_1_joined5percentKinases_df.apply(
+    method_1_joined10percentKinases_df["Kinase"] = method_1_joined10percentKinases_df.index
+    method_1_joined10percentKinases_df["Kinase"] = method_1_joined10percentKinases_df.apply(
         lambda x: x["Kinase"].split("__")[1], axis=1
     )
-    method_2_joined5percentKinases_df["Kinase"] = method_2_joined5percentKinases_df.index
-    method_2_joined5percentKinases_df["Kinase"] = method_2_joined5percentKinases_df.apply(
+    method_2_joined10percentKinases_df["Kinase"] = method_2_joined10percentKinases_df.index
+    method_2_joined10percentKinases_df["Kinase"] = method_2_joined10percentKinases_df.apply(
         lambda x: x["Kinase"].split("__")[1], axis=1
     )
-    method_1_hit_count_df = method_1_joined5percentKinases_df.groupby(by="Kinase").agg('sum')
-    method_2_hit_count_df = method_2_joined5percentKinases_df.groupby(by="Kinase").agg('sum')
+    method_1_hit_count_df = method_1_joined10percentKinases_df.groupby(by="Kinase").agg('sum')
+    method_2_hit_count_df = method_2_joined10percentKinases_df.groupby(by="Kinase").agg('sum')
     method_1_hit_count_df.columns = [method_1_name]
     method_2_hit_count_df.columns = [method_2_name]
     hit_count_df = pd.concat([method_1_hit_count_df, method_2_hit_count_df], axis=1)
@@ -257,7 +265,7 @@ def pairwise_comparison(
     values_1 += values_1[:1]
     values_2 += values_2[:1]
     angles += angles[:1]
-    fig, ax = plt.subplots(figsize=(4, 4), subplot_kw={'projection': 'polar'})
+    fig, ax = plt.subplots(figsize=(12, 12), subplot_kw={'projection': 'polar'})
     ax.plot(angles, values_1, marker='o', label=method_1_name)
     ax.plot(angles, values_2, marker='x', linestyle='--', label=method_2_name)
     ax.set_xticklabels([])
@@ -265,199 +273,5 @@ def pairwise_comparison(
         ax.text(angle, max(max(values_1), max(values_2)) + 2, label, ha='center', va='center')
     fig.subplots_adjust(left=0.2, right=0.8, top=0.8, bottom=0.2)
     ax.legend(loc='upper right', frameon=False, bbox_to_anchor=(1.3, 1.3))
-    plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_topNpercentKinases_radial.pdf")
-
-
-def main():
-    input_list_phosx_txt = sys.argv[1]
-    input_list_gsea_txt = sys.argv[2]
-    input_list_kinex_txt = sys.argv[3]
-    input_list_kstar_txt = sys.argv[4]
-    input_list_ptmsea_txt = sys.argv[5]
-    input_list_zscore_txt = sys.argv[6]
-    input_list_phosxnouae_txt = sys.argv[7]
-    metadata_tsv = sys.argv[8]
-    kinase_activity_metric_str = sys.argv[9]
-    out_prefix = sys.argv[10]
-    """
-    input_list_phosx_txt = 'input_files_phosx.txt'
-    input_list_gsea_txt = 'input_files_gsea.txt'
-    input_list_kinex_txt = 'input_files_kinex.txt'
-    input_list_kstar_txt = 'input_files_kstar.txt'
-    input_list_ptmsea_txt = 'input_files_ptmsea.txt'
-    input_list_zscore_txt = 'input_files_zscore.txt'
-    metadata_tsv = 'input/metadata.tsv'
-    kinase_activity_metric_str = 'Activity Score'
-    out_prefix = 'kinase_activity_benchmark/hernandez2017/pairwise/'
-    """
-    
-    
-    # metadata - ground truth kinase regulation
-    metadata_df = pd.read_csv(metadata_tsv, sep="\t", index_col=None, header=None)
-    metadata_df.columns = ["Experiment", "Kinase", "Regulation"]
-    metadata_df.index = metadata_df.apply(
-        lambda x: f'{x["Experiment"]}__{x["Kinase"]}', axis=1
-    )
-    
-
-    gsea_kinase_activity_metric_str = "NES"
-
-
-    # PhosX kinase activity
-    kinase_activity_phosx_df = make_kinase_activity_df(
-        "PhosX",
-        input_list_phosx_txt,
-        kinase_activity_metric_str,
-        out_prefix,
-    )
-
-
-    # GSEApy kinase activity
-    kinase_activity_gsea_df = make_kinase_activity_df(
-        "GSEA",  
-        input_list_gsea_txt,
-        gsea_kinase_activity_metric_str,
-        out_prefix,
-    )
-   
-
-    # Kinex kinase activity
-    kinase_activity_kinex_df = make_kinase_activity_df(
-        "Kinex",
-        input_list_kinex_txt,
-        kinase_activity_metric_str,
-        out_prefix,
-    )
-
-    # KSTAR kinase activity
-    kinase_activity_kstar_df = make_kinase_activity_df(
-        "KSTAR",
-        input_list_kstar_txt,
-        kinase_activity_metric_str,
-        out_prefix,
-    )
-    
-
-    # PTM-SEA kinase activity
-    kinase_activity_ptmsea_df = make_kinase_activity_df(
-        "PTM-SEA",
-        input_list_ptmsea_txt,
-        kinase_activity_metric_str,
-        out_prefix,
-    )
-    
-
-    # Z-score kinase activity
-    kinase_activity_zscore_df = make_kinase_activity_df(
-        "Z-score",
-        input_list_zscore_txt,
-        kinase_activity_metric_str,
-        out_prefix,
-    )
-    
-
-    # PhosX (no upstream activation evidence) kinase activity
-    kinase_activity_phosxnouae_df = make_kinase_activity_df(
-        "PhosX-NoUAE",
-        input_list_phosxnouae_txt,
-        kinase_activity_metric_str,
-        out_prefix,
-    )
-
-    
-    # Pairwise comparisons: PhosX vs <method>
-    pairwise_comparison(
-        "PhosX",
-        kinase_activity_phosx_df,
-        "Kinex",
-        kinase_activity_kinex_df,
-        metadata_df,
-        out_prefix,
-    )
-    pairwise_comparison(
-        "PhosX",
-        kinase_activity_phosx_df,
-        "GSEApy",
-        kinase_activity_gsea_df,
-        metadata_df,
-        out_prefix,
-    )
-    pairwise_comparison(
-        "PhosX",
-        kinase_activity_phosx_df,
-        "KSTAR",
-        kinase_activity_kstar_df,
-        metadata_df,
-        out_prefix,
-    )
-    pairwise_comparison(
-        "PhosX",
-        kinase_activity_phosx_df,
-        "PTM-SEA",
-        kinase_activity_ptmsea_df,
-        metadata_df,
-        out_prefix,
-    )
-    pairwise_comparison(
-        "PhosX",
-        kinase_activity_phosx_df,
-        "Z-score",
-        kinase_activity_zscore_df,
-        metadata_df,
-        out_prefix,
-    )
-    pairwise_comparison(
-        "PhosX",
-        kinase_activity_phosx_df,
-        "PhosX-NoUAE",
-        kinase_activity_phosxnouae_df,
-        metadata_df,
-        out_prefix,
-    )
-
-
-    # Pairwise comparisons: PhosX-NoUAE vs <method>
-    pairwise_comparison(
-        "PhosX-NoUAE",
-        kinase_activity_phosxnouae_df,
-        "Kinex",
-        kinase_activity_kinex_df,
-        metadata_df,
-        out_prefix,
-    )
-    pairwise_comparison(
-        "PhosX-NoUAE",
-        kinase_activity_phosxnouae_df,
-        "GSEApy",
-        kinase_activity_gsea_df,
-        metadata_df,
-        out_prefix,
-    )
-    pairwise_comparison(
-        "PhosX-NoUAE",
-        kinase_activity_phosxnouae_df,
-        "KSTAR",
-        kinase_activity_kstar_df,
-        metadata_df,
-        out_prefix,
-    )
-    pairwise_comparison(
-        "PhosX-NoUAE",
-        kinase_activity_phosxnouae_df,
-        "PTM-SEA",
-        kinase_activity_ptmsea_df,
-        metadata_df,
-        out_prefix,
-    )
-    pairwise_comparison(
-        "PhosX-NoUAE",
-        kinase_activity_phosxnouae_df,
-        "Z-score",
-        kinase_activity_zscore_df,
-        metadata_df,
-        out_prefix,
-    )
-    
-
-if __name__ == "__main__":
-    main()
+    plt.tight_layout()
+    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_topNpercentKinases_radial.pdf")

@@ -367,17 +367,11 @@ process translate_cptac_metadata {
 
 
 /*
-compute and plot distributions of auroc and precision at recall 50%, with the
-same procedure as in cptac
-<https://doi.org/10.1093/bioinformatics/btx082>
-i.e. take positive kinase-condition pairs, create negative set by drawing the
-same number of random  combinations of kinase-conditions pairs that are not in the positive set.
-Compute AUROC and AUPR. Reapeat 100 times.
 [...]
 */
 process benchmark_phosx_cptac {
 
-    memory "500G"
+    memory "128G"
 
     publishDir "${out_dir}", pattern: "kinase_activity_benchmark/cptac/pairwise/*.pdf", mode: 'copy'
 
@@ -388,6 +382,7 @@ process benchmark_phosx_cptac {
         path 'input/kstar/*.tsv'
         path 'input/ptmsea/*.tsv'
         path 'input/zscore/*.tsv'
+        path 'input/phosxnouae/*.tsv'
         path 'input/metadata.tsv'
 
     output:
@@ -395,6 +390,12 @@ process benchmark_phosx_cptac {
 
     script:
     """
+    if [ -z "\${PYTHONPATH:-}" ]; then \\
+        export PYTHONPATH="${projectDir}/src"; \\
+    else \\
+        export PYTHONPATH="${projectDir}/src:\$PYTHONPATH"; \\
+    fi
+
     mkdir -p kinase_activity_benchmark/cptac/pairwise/
     mkdir -p data/phosx
     mkdir -p data/gsea
@@ -402,6 +403,7 @@ process benchmark_phosx_cptac {
     mkdir -p data/kstar
     mkdir -p data/ptmsea
     mkdir -p data/zscore
+    mkdir -p data/phosxnouae
 
     for file in \$(ls input/phosx/); do \
         linkpath=\$(readlink -f input/phosx/"\$file"); \
@@ -455,18 +457,21 @@ process benchmark_phosx_cptac {
         cp \$file data/kstar/\$name_dot_tsv; \
         echo data/kstar/\$name_dot_tsv >> paths_kstar.txt; \
     done
+    
 
     cat paths_kstar.txt | sort -g > input_files_kstar.txt
 
-
+    
     for file in \$(ls input/ptmsea/); do \
         linkpath=\$(readlink -f input/ptmsea/"\$file"); \
         echo "\$linkpath" >> symlink_paths_ptmsea.txt; \
     done
 
+    # Remove PRKG1, CDK7, and PRKCB from PTMSEA files (there is a duplicated kinase in the PTMSEA files from Muller-dott 2025)
     for file in \$(cat symlink_paths_ptmsea.txt); do \
         name_dot_tsv=\$(basename "\$file"); \
-        cp \$file data/ptmsea/\$name_dot_tsv; \
+        cat \$file | grep -vw "PRKG1" | grep -vw "CDK7" | grep -vw "PRKCB" \
+        > data/ptmsea/\$name_dot_tsv; \
         echo data/ptmsea/\$name_dot_tsv >> paths_ptmsea.txt; \
     done
 
@@ -485,6 +490,20 @@ process benchmark_phosx_cptac {
     done
 
     cat paths_zscore.txt | sort -g > input_files_zscore.txt
+
+
+    for file in \$(ls input/phosxnouae/); do \
+        linkpath=\$(readlink -f input/phosxnouae/"\$file"); \
+        echo "\$linkpath" >> symlink_paths_phosxnouae.txt; \
+    done
+
+    for file in \$(cat symlink_paths_phosxnouae.txt); do \
+        name_dot_tsv=\$(basename "\$file"); \
+        cp \$file data/phosxnouae/\$name_dot_tsv; \
+        echo data/phosxnouae/\$name_dot_tsv >> paths_phosxnouae.txt; \
+    done
+
+    cat paths_phosxnouae.txt | sort -g > input_files_phosxnouae.txt
 
 
     cptac_phosx_kinase_activity_benchmark_pairwise.py \
@@ -494,6 +513,7 @@ process benchmark_phosx_cptac {
         input_files_kstar.txt \
         input_files_ptmsea.txt \
         input_files_zscore.txt \
+        input_files_phosxnouae.txt \
         input/metadata.tsv \
         "${params.kinase_activity_metric}" \
         kinase_activity_benchmark/cptac/pairwise/
@@ -503,17 +523,11 @@ process benchmark_phosx_cptac {
 
 
 /*
-compute and plot distributions of auroc and precision at recall 50%, with the
-same procedure as in cptac
-<https://doi.org/10.1093/bioinformatics/btx082>
-i.e. take positive kinase-condition pairs, create negative set by drawing the
-same number of random  combinations of kinase-conditions pairs that are not in the positive set.
-Compute AUROC and AUPR. Reapeat 100 times.
 [...]
 */
-process benchmark_phosx_cptac_pt1 {
+process benchmark_phosx_per_kinase_cptac {
 
-    memory "500G"
+    memory "128G"
 
     publishDir "${out_dir}", pattern: "kinase_activity_benchmark/cptac/pairwise/*.pdf", mode: 'copy'
 
@@ -524,6 +538,7 @@ process benchmark_phosx_cptac_pt1 {
         path 'input/kstar/*.tsv'
         path 'input/ptmsea/*.tsv'
         path 'input/zscore/*.tsv'
+        path 'input/phosxnouae/*.tsv'
         path 'input/metadata.tsv'
 
     output:
@@ -531,6 +546,12 @@ process benchmark_phosx_cptac_pt1 {
 
     script:
     """
+    if [ -z "\${PYTHONPATH:-}" ]; then \\
+        export PYTHONPATH="${projectDir}/src"; \\
+    else \\
+        export PYTHONPATH="${projectDir}/src:\$PYTHONPATH"; \\
+    fi
+
     mkdir -p kinase_activity_benchmark/cptac/pairwise/
     mkdir -p data/phosx
     mkdir -p data/gsea
@@ -538,6 +559,7 @@ process benchmark_phosx_cptac_pt1 {
     mkdir -p data/kstar
     mkdir -p data/ptmsea
     mkdir -p data/zscore
+    mkdir -p data/phosxnouae
 
     for file in \$(ls input/phosx/); do \
         linkpath=\$(readlink -f input/phosx/"\$file"); \
@@ -595,80 +617,16 @@ process benchmark_phosx_cptac_pt1 {
     cat paths_kstar.txt | sort -g > input_files_kstar.txt
 
 
-    cptac_phosx_kinase_activity_benchmark_pairwise_pt1.py \
-        input_files_phosx.txt \
-        input_files_gsea.txt \
-        input_files_kinex.txt \
-        input_files_kstar.txt \
-        input_files_ptmsea.txt \
-        input_files_zscore.txt \
-        input/metadata.tsv \
-        "${params.kinase_activity_metric}" \
-        kinase_activity_benchmark/cptac/pairwise/
-    """
-
-}
-
-
-/*
-compute and plot distributions of auroc and precision at recall 50%, with the
-same procedure as in cptac
-<https://doi.org/10.1093/bioinformatics/btx082>
-i.e. take positive kinase-condition pairs, create negative set by drawing the
-same number of random  combinations of kinase-conditions pairs that are not in the positive set.
-Compute AUROC and AUPR. Reapeat 100 times.
-[...]
-*/
-process benchmark_phosx_cptac_pt2 {
-
-    memory "500G"
-
-    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/cptac/pairwise/*.pdf", mode: 'copy'
-
-    input:
-        path 'input/phosx/*.tsv'
-        path 'input/gsea/*.csv'
-        path 'input/kinex/*.tsv'
-        path 'input/kstar/*.tsv'
-        path 'input/ptmsea/*.tsv'
-        path 'input/zscore/*.tsv'
-        path 'input/metadata.tsv'
-
-    output:
-        path "kinase_activity_benchmark/cptac/pairwise/*.pdf"
-
-    script:
-    """
-    mkdir -p kinase_activity_benchmark/cptac/pairwise/
-    mkdir -p data/phosx
-    mkdir -p data/gsea
-    mkdir -p data/kinex
-    mkdir -p data/kstar
-    mkdir -p data/ptmsea
-    mkdir -p data/zscore
-
-    for file in \$(ls input/phosx/); do \
-        linkpath=\$(readlink -f input/phosx/"\$file"); \
-        echo "\$linkpath" >> symlink_paths_phosx.txt; \
-    done
-
-    for file in \$(cat symlink_paths_phosx.txt); do \
-        name_dot_tsv=\$(basename "\$file"); \
-        cp \$file data/phosx/\$name_dot_tsv; \
-        echo data/phosx/\$name_dot_tsv >> paths_phosx.txt; \
-    done
-
-    cat paths_phosx.txt | sort -g > input_files_phosx.txt
-
-    
     for file in \$(ls input/ptmsea/); do \
         linkpath=\$(readlink -f input/ptmsea/"\$file"); \
         echo "\$linkpath" >> symlink_paths_ptmsea.txt; \
     done
 
+    # Remove PRKG1, CDK7, and PRKCB from PTMSEA files (there is a duplicated kinase in the PTMSEA files from Muller-dott 2025)
     for file in \$(cat symlink_paths_ptmsea.txt); do \
         name_dot_tsv=\$(basename "\$file"); \
-        cp \$file data/ptmsea/\$name_dot_tsv; \
+        cat \$file | grep -vw "PRKG1" | grep -vw "CDK7" | grep -vw "PRKCB" \
+        > data/ptmsea/\$name_dot_tsv; \
         echo data/ptmsea/\$name_dot_tsv >> paths_ptmsea.txt; \
     done
 
@@ -689,13 +647,28 @@ process benchmark_phosx_cptac_pt2 {
     cat paths_zscore.txt | sort -g > input_files_zscore.txt
 
 
-    cptac_phosx_kinase_activity_benchmark_pairwise_pt2.py \
+    for file in \$(ls input/phosxnouae/); do \
+        linkpath=\$(readlink -f input/phosxnouae/"\$file"); \
+        echo "\$linkpath" >> symlink_paths_phosxnouae.txt; \
+    done
+
+    for file in \$(cat symlink_paths_phosxnouae.txt); do \
+        name_dot_tsv=\$(basename "\$file"); \
+        cp \$file data/phosxnouae/\$name_dot_tsv; \
+        echo data/phosxnouae/\$name_dot_tsv >> paths_phosxnouae.txt; \
+    done
+
+    cat paths_phosxnouae.txt | sort -g > input_files_phosxnouae.txt
+
+    
+    cptac_phosx_kinase_activity_benchmark_pairwise_per_kinase_insights.py \
         input_files_phosx.txt \
         input_files_gsea.txt \
         input_files_kinex.txt \
         input_files_kstar.txt \
         input_files_ptmsea.txt \
         input_files_zscore.txt \
+        input_files_phosxnouae.txt \
         input/metadata.tsv \
         "${params.kinase_activity_metric}" \
         kinase_activity_benchmark/cptac/pairwise/

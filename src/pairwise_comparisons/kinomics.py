@@ -2,7 +2,6 @@
 
 import pandas as pd
 import numpy as np
-import sys
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
@@ -85,11 +84,11 @@ def true_kinase_quantile(kinase_activity_df, regulation_df):
     return quantile_series
 
 
-def top5percentScoreFraction(
+def top10percentScoreFraction(
     kinase_activity_df, regulation_df, metadata_experiments_set
 ):
-    top5percentScore = 0
-    top5percentScore_total = 0
+    top10percentScore = 0
+    top10percentScore_total = 0
     for experiment in metadata_experiments_set:
         upreg_kinases = list(
             regulation_df["Kinase"].loc[regulation_df["Experiment"] == experiment,]
@@ -107,17 +106,17 @@ def top5percentScoreFraction(
                 if len(activity_k) == 0:
                     next
                 else:
-                    top5percentScore_total = top5percentScore_total + 1
-                    if activity_k.values[0] >= 0.95:
-                        top5percentScore = top5percentScore + 1
-    return (top5percentScore, top5percentScore_total)
+                    top10percentScore_total = top10percentScore_total + 1
+                    if activity_k.values[0] > 0.9:
+                        top10percentScore = top10percentScore + 1
+    return (top10percentScore, top10percentScore_total)
 
 
-def bottom5percentScoreFraction(
+def bottom10percentScoreFraction(
     kinase_activity_df, regulation_df, metadata_experiments_set
 ):
-    bottom5percentScore = 0
-    bottom5percentScore_total = 0
+    bottom10percentScore = 0
+    bottom10percentScore_total = 0
     for experiment in metadata_experiments_set:
         upreg_kinases = list(
             regulation_df["Kinase"].loc[regulation_df["Experiment"] == experiment,]
@@ -135,17 +134,17 @@ def bottom5percentScoreFraction(
                 if len(activity_k) == 0:
                     next
                 else:
-                    bottom5percentScore_total = bottom5percentScore_total + 1
-                    if activity_k.values[0] <= 0.05:
-                        bottom5percentScore = bottom5percentScore + 1
-    return (bottom5percentScore, bottom5percentScore_total)
+                    bottom10percentScore_total = bottom10percentScore_total + 1
+                    if activity_k.values[0] < 0.1:
+                        bottom10percentScore = bottom10percentScore + 1
+    return (bottom10percentScore, bottom10percentScore_total)
 
 
-def top5percentKinasesFraction(
+def top10percentKinasesFraction(
     kinase_activity_df, regulation_df, metadata_experiments_set
 ):
-    top5percentScore = 0
-    top5percentScore_total = 0
+    top10percentScore = 0
+    top10percentScore_total = 0
     for experiment in metadata_experiments_set:
         upreg_kinases = list(
             regulation_df["Kinase"].loc[regulation_df["Experiment"] == experiment,]
@@ -173,17 +172,17 @@ def top5percentKinasesFraction(
                 if len(rank_k) == 0:
                     next
                 else:
-                    top5percentScore_total = top5percentScore_total + 1
-                    if rank_k.values[0] / n_ranks >= 0.95:
-                        top5percentScore = top5percentScore + 1
-    return (top5percentScore, top5percentScore_total)
+                    top10percentScore_total = top10percentScore_total + 1
+                    if rank_k.values[0] / n_ranks > 0.90:
+                        top10percentScore = top10percentScore + 1
+    return (top10percentScore, top10percentScore_total)
 
 
-def bottom5percentKinasesFraction(
+def bottom10percentKinasesFraction(
     kinase_activity_df, regulation_df, metadata_experiments_set
 ):
-    top5percentScore = 0
-    top5percentScore_total = 0
+    top10percentScore = 0
+    top10percentScore_total = 0
     for experiment in metadata_experiments_set:
         downreg_kinases = list(
             regulation_df["Kinase"].loc[regulation_df["Experiment"] == experiment,]
@@ -211,10 +210,10 @@ def bottom5percentKinasesFraction(
                 if len(rank_k) == 0:
                     next
                 else:
-                    top5percentScore_total = top5percentScore_total + 1
-                    if rank_k.values[0] / n_ranks <= 0.05:
-                        top5percentScore = top5percentScore + 1
-    return (top5percentScore, top5percentScore_total)
+                    top10percentScore_total = top10percentScore_total + 1
+                    if rank_k.values[0] / n_ranks < 0.1:
+                        top10percentScore = top10percentScore + 1
+    return (top10percentScore, top10percentScore_total)
 
 
 def make_kinase_activity_df(
@@ -237,6 +236,7 @@ def make_kinase_activity_df(
         if len(df.columns) == 0:
             df = pd.read_csv(data_path_dict[data_id], sep=",", index_col=0)
         series = df[kinase_activity_metric]
+        series.fillna(0, inplace=True)
         series.name = data_id
         kinase_activity_df = kinase_activity_df.join(series, how="outer")
     # normalise and scale
@@ -258,12 +258,12 @@ def make_kinase_activity_df(
     kinase_activity_df.index = kinase_activity_df.apply(
         lambda x: f'{x["Experiment"]}__{x["Kinase"]}', axis=1
     )
-    #kinase_activity_df.to_csv(
-    #    f"{out_prefix}cptac_kinase_activity_{method_name}.tsv",
-    #    header=True,
-    #    index=True,
-    #    sep="\t",
-    #)
+    kinase_activity_df.to_csv(
+        f"{out_prefix}hernandez2017_kinase_activity_{method_name}.tsv",
+        header=True,
+        index=True,
+        sep="\t",
+    )
     return kinase_activity_df
 
 
@@ -285,18 +285,18 @@ def pairwise_comparison(
     # make sets of indexes for positive and negative examples in upregulation and downregulation, separately
     upregulation_df = metadata_df.loc[metadata_df["Regulation"] == 1]
     downregulation_df = metadata_df.loc[metadata_df["Regulation"] == -1]
-    #upregulation_df.to_csv(
-    #    f"{out_prefix}cptac_{method_1_name}_{method_2_name}_upregulated.tsv",
-    #    header=True,
-    #    index=True,
-    #    sep="\t"
-    #)
-    #downregulation_df.to_csv(
-    #    f"{out_prefix}cptac_{method_1_name}_{method_2_name}_downregulated.tsv",
-    #    header=True,
-    #    index=True,
-    #    sep="\t",
-    #)
+    upregulation_df.to_csv(
+        f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_upregulated.tsv",
+        header=True,
+        index=True,
+        sep="\t"
+    )
+    downregulation_df.to_csv(
+        f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_downregulated.tsv",
+        header=True,
+        index=True,
+        sep="\t",
+    )
     metadata_kinases_set = set(metadata_df["Kinase"].unique())
     metadata_experiments_set = set(metadata_df["Experiment"].unique())
     possible_indexes_list = list(
@@ -367,78 +367,78 @@ def pairwise_comparison(
         .melt()
     )
     downreg_true_kinase_quantile_df.columns = ["Method", "Normalized rank"]
-    plt.close()
-    plt.figure(figsize=[2.2, 2.2])
+    plt.clf()
+    plt.figure(figsize=[2.5, 2.5])
     ax = sns.violinplot(
         data=joined_true_kinase_quantile_df,
         x="Method",
         y="Normalized rank",
         cut=0,
-        hue="Method",
+        #hue="Method",
     )
     #ax.set_yticks(np.arange(0, 1.1, 0.1))
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_joined_true_kinase_quantile.pdf")
-    plt.close()
-    plt.figure(figsize=[2.2, 2.2])
+    plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_joined_true_kinase_quantile.pdf")
+    plt.clf()
+    plt.figure(figsize=[2.5, 2.5])
     ax = sns.violinplot(
         data=upreg_true_kinase_quantile_df,
         x="Method",
         y="Normalized rank",
         cut=0,
-        hue="Method",
+        #hue="Method",
     )
     #ax.set_yticks(np.arange(0, 1.1, 0.1))
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_upreg_true_kinase_quantile.pdf")
-    plt.close()
-    plt.figure(figsize=[2.2, 2.2])
+    plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_upreg_true_kinase_quantile.pdf")
+    plt.clf()
+    plt.figure(figsize=[2.5, 2.5])
     ax = sns.violinplot(
         data=downreg_true_kinase_quantile_df,
         x="Method",
         y="Normalized rank",
         cut=0,
-        hue="Method",
+        #hue="Method",
     )
     #ax.set_yticks(np.arange(0, 1.1, 0.1))
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_downreg_true_kinase_quantile.pdf")
-    # top 5% score true positives performance
-    method_1_top5percentScore, method_1_top5percentScore_total = top5percentScoreFraction(
+    plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_downreg_true_kinase_quantile.pdf")
+    # top 10% score true positives performance
+    method_1_top10percentScore, method_1_top10percentScore_total = top10percentScoreFraction(
         kinase_activity_method_1_df, upregulation_df, metadata_experiments_set
     )
-    method_2_top5percentScore, method_2_top5percentScore_total = top5percentScoreFraction(
+    method_2_top10percentScore, method_2_top10percentScore_total = top10percentScoreFraction(
         kinase_activity_method_2_df, upregulation_df, metadata_experiments_set
     )
-    method_1_bottom5percentScore, method_1_bottom5percentScore_total = (
-        bottom5percentScoreFraction(
+    method_1_bottom10percentScore, method_1_bottom10percentScore_total = (
+        bottom10percentScoreFraction(
             kinase_activity_method_1_df, downregulation_df, metadata_experiments_set
         )
     )
-    method_2_bottom5percentScore, method_2_bottom5percentScore_total = (
-        bottom5percentScoreFraction(
+    method_2_bottom10percentScore, method_2_bottom10percentScore_total = (
+        bottom10percentScoreFraction(
             kinase_activity_method_2_df, downregulation_df, metadata_experiments_set
         )
     )
-    method_1_score_total = method_1_top5percentScore_total + method_1_bottom5percentScore_total
-    method_2_score_total = method_2_top5percentScore_total + method_2_bottom5percentScore_total
+    method_1_score_total = method_1_top10percentScore_total + method_1_bottom10percentScore_total
+    method_2_score_total = method_2_top10percentScore_total + method_2_bottom10percentScore_total
     tp_percentage_df = pd.DataFrame(
         {
             "Upreg.": [
-                method_1_top5percentScore / method_1_score_total,
-                method_2_top5percentScore / method_2_score_total,
+                method_1_top10percentScore / method_1_score_total,
+                method_2_top10percentScore / method_2_score_total,
             ],
             "Downreg.": [
-                method_1_bottom5percentScore / method_1_score_total,
-                method_2_bottom5percentScore / method_2_score_total,
+                method_1_bottom10percentScore / method_1_score_total,
+                method_2_bottom10percentScore / method_2_score_total,
             ],
             "Method": [method_1_name, method_2_name],
         }
     )
-    plt.close()
+    plt.clf()
     plt.figure(figsize=[2, 3])
     ax = tp_percentage_df.set_index("Method").plot(
         kind="bar", stacked=True, color=["red", "blue"], alpha=0.5, figsize=(2.2, 2.6)
@@ -449,48 +449,48 @@ def pairwise_comparison(
     ax.set_ylabel("Fraction of regulated kinases")
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_topNpercentScore_stacked_barplot.pdf")
-    # top 5% kinases true positives performance
-    method_1_top5percentKinases, method_1_top5percentKinases_total = (
-        top5percentKinasesFraction(
+    plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_topNpercentScore_stacked_barplot.pdf")
+    # top 10% kinases true positives performance
+    method_1_top10percentKinases, method_1_top10percentKinases_total = (
+        top10percentKinasesFraction(
             kinase_activity_method_1_df, upregulation_df, metadata_experiments_set
         )
     )
-    method_2_top5percentKinases, method_2_top5percentKinases_total = (
-        top5percentKinasesFraction(
+    method_2_top10percentKinases, method_2_top10percentKinases_total = (
+        top10percentKinasesFraction(
             kinase_activity_method_2_df, upregulation_df, metadata_experiments_set
         )
     )
-    method_1_bottom5percentKinases, method_1_bottom5percentKinases_total = (
-        bottom5percentKinasesFraction(
+    method_1_bottom10percentKinases, method_1_bottom10percentKinases_total = (
+        bottom10percentKinasesFraction(
             kinase_activity_method_1_df, downregulation_df, metadata_experiments_set
         )
     )
-    method_2_bottom5percentKinases, method_2_bottom5percentKinases_total = (
-        bottom5percentKinasesFraction(
+    method_2_bottom10percentKinases, method_2_bottom10percentKinases_total = (
+        bottom10percentKinasesFraction(
             kinase_activity_method_2_df, downregulation_df, metadata_experiments_set
         )
     )
     method_1_kinases_total = (
-        method_1_top5percentKinases_total + method_1_bottom5percentKinases_total
+        method_1_top10percentKinases_total + method_1_bottom10percentKinases_total
     )
     method_2_kinases_total = (
-        method_2_top5percentKinases_total + method_2_bottom5percentKinases_total
+        method_2_top10percentKinases_total + method_2_bottom10percentKinases_total
     )
     tp_percentage_df = pd.DataFrame(
         {
             "Upreg.": [
-                method_1_top5percentKinases / method_1_kinases_total,
-                method_2_top5percentKinases / method_2_kinases_total,
+                method_1_top10percentKinases / method_1_kinases_total,
+                method_2_top10percentKinases / method_2_kinases_total,
             ],
             "Downreg.": [
-                method_1_bottom5percentKinases / method_1_kinases_total,
-                method_2_bottom5percentKinases / method_2_kinases_total,
+                method_1_bottom10percentKinases / method_1_kinases_total,
+                method_2_bottom10percentKinases / method_2_kinases_total,
             ],
             "Method": [method_1_name, method_2_name],
         }
     )
-    plt.close()
+    plt.clf()
     plt.figure(figsize=[2, 3])
     ax = tp_percentage_df.set_index("Method").plot(
         kind="bar", stacked=True, color=["red", "blue"], alpha=0.5, figsize=(2.2, 2.6)
@@ -501,7 +501,7 @@ def pairwise_comparison(
     ax.set_ylabel("Fraction of regulated kinases")
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_topNpercentKinases_stacked_barplot.pdf")
+    plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_topNpercentKinases_stacked_barplot.pdf")
     # AUROC and AUPR method 1 evaluation 
     violinplots_upreg_df = pd.DataFrame()
     violinplots_downreg_df = pd.DataFrame()
@@ -526,7 +526,7 @@ def pairwise_comparison(
         for x in downregulation_negative_indexes_list
         if x in kinase_activity_method_1_df.index
     ]
-    for i in range(100):
+    for i in range(256):
         # randomly sample neg ex in equal number as the pos ex, for up- and down- regulation separately
         upreg_neg_idx_list = sample(
             upregulation_method_1_negative_indexes_list,
@@ -615,7 +615,7 @@ def pairwise_comparison(
         for x in downregulation_negative_indexes_list
         if x in kinase_activity_method_2_df.index
     ]
-    for i in range(100):
+    for i in range(256):
         # randomly sample neg ex in equal number as the pos ex, for up- and down- regulation separately
         upreg_neg_idx_list = sample(
             upregulation_method_2_negative_indexes_list,
@@ -683,8 +683,8 @@ def pairwise_comparison(
     data.columns = ["Metric", "Value"]
     data["Method"] = [method_2_name for i in range(len(data))]
     violinplots_joined_df = pd.concat([violinplots_joined_df, data])
-    plt.close()
-    plt.figure(figsize=[3, 3])
+    plt.clf()
+    plt.figure(figsize=[3.5, 3.5])
     ax = sns.violinplot(
         data=violinplots_upreg_df, x="Metric", y="Value", hue="Method", cut=0
     )
@@ -696,8 +696,8 @@ def pairwise_comparison(
     plt.legend(loc="lower right", frameon=False)
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_upreg_auc_prc_violinplots_w_title.pdf")
-    plt.close()
+    plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_upreg_auc_prc_violinplots_w_title.pdf")
+    plt.clf()
     plt.figure(figsize=[3.5, 3.5])
     ax = sns.violinplot(
         data=violinplots_downreg_df, x="Metric", y="Value", hue="Method", cut=0
@@ -710,8 +710,8 @@ def pairwise_comparison(
     plt.legend(loc="lower right", frameon=False)
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_downreg_auc_prc_violinplots_w_title.pdf")
-    plt.close()
+    plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_downreg_auc_prc_violinplots_w_title.pdf")
+    plt.clf()
     plt.figure(figsize=[3.5, 3.5])
     ax = sns.violinplot(
         data=violinplots_joined_df, x="Metric", y="Value", hue="Method", cut=0
@@ -724,9 +724,10 @@ def pairwise_comparison(
     plt.legend(loc="lower right", frameon=False)
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_joined_auc_prc_violinplots_w_title.pdf")
-    plt.close()
-    plt.figure(figsize=[2.2, 2.2])
+    plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_joined_auc_prc_violinplots_w_title.pdf")
+
+    plt.clf()
+    plt.figure(figsize=[2.5, 2.5])
     ax = sns.violinplot(
         data=violinplots_upreg_df, x="Metric", y="Value", hue="Method", cut=0
     )
@@ -735,9 +736,10 @@ def pairwise_comparison(
     plt.legend(loc="lower right", frameon=False)
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_upreg_auc_prc_violinplots.pdf")
-    plt.close()
-    plt.figure(figsize=[2.2, 2.2])
+    plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_upreg_auc_prc_violinplots.pdf")
+
+    plt.clf()
+    plt.figure(figsize=[2.5, 2.5])
     ax = sns.violinplot(
         data=violinplots_downreg_df, x="Metric", y="Value", hue="Method", cut=0
     )
@@ -746,9 +748,9 @@ def pairwise_comparison(
     plt.legend(loc="lower right", frameon=False)
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_downreg_auc_prc_violinplots.pdf")
-    plt.close()
-    plt.figure(figsize=[2.2, 2.2])
+    plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_downreg_auc_prc_violinplots.pdf")
+    plt.clf()
+    plt.figure(figsize=[2.5, 2.5])
     ax = sns.violinplot(
         data=violinplots_joined_df, x="Metric", y="Value", hue="Method", cut=0
     )
@@ -757,7 +759,7 @@ def pairwise_comparison(
     plt.legend(loc="lower right", frameon=False)
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_joined_auc_prc_violinplots.pdf")
+    plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_joined_auc_prc_violinplots.pdf")
     # Upregulated and Downregulated subset comparisons
     kinase_activity_method_1_df = kinase_activity_method_1_df.rename(
         columns={"Kinase activity change": f"{method_1_name} Activity Score"}
@@ -771,7 +773,7 @@ def pairwise_comparison(
         )
         .merge(kinase_activity_method_2_df, on=["Experiment", "Kinase"], how="left")
     )
-    plt.close()
+    plt.clf()
     plt.figure(figsize=(3, 3))
     #plt.ylim([0, 30])
     sns.histplot(
@@ -793,8 +795,8 @@ def pairwise_comparison(
     plt.legend(loc="upper left", frameon=False, labels=["Upregulated", "Downregulated"])
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_in_{method_1_name}_{method_2_name}_score_regulated_kinases.pdf")
-    plt.close()
+    plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_in_{method_1_name}_{method_2_name}_score_regulated_kinases.pdf")
+    plt.clf()
     plt.figure(figsize=(3, 3))
     #plt.ylim([0, 30])
     sns.histplot(
@@ -816,7 +818,7 @@ def pairwise_comparison(
     plt.legend(loc="upper left", frameon=False, labels=["Upregulated", "Downregulated"])
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_2_name}_in_{method_1_name}_{method_2_name}_score_regulated_kinases.pdf")
+    plt.savefig(f"{out_prefix}hernandez2017_{method_2_name}_in_{method_1_name}_{method_2_name}_score_regulated_kinases.pdf")
     regulated_df = regulated_df.dropna()
     n_upregulated = len(regulated_df.loc[regulated_df["Regulation"] == 1])
     n_downregulated = len(regulated_df.loc[regulated_df["Regulation"] == -1])
@@ -829,7 +831,7 @@ def pairwise_comparison(
     class_imbalance = n_upregulated / (n_upregulated + n_downregulated)
     if class_imbalance < 0.5:
         class_imbalance = 1 / class_imbalance
-    plt.close()
+    plt.clf()
     plt.figure(figsize=(3.5, 3.5))
     plt.plot(method_1_fpr, method_1_tpr, lw=2, label=f"{method_1_name} (AUC = {method_1_roc_auc:.2f})")
     plt.plot(method_2_fpr, method_2_tpr, lw=2, label=f"{method_2_name} (AUC = {method_2_roc_auc:.2f})")
@@ -844,8 +846,8 @@ def pairwise_comparison(
     )
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_regulated_kinases_ROC_w_title.pdf")
-    plt.close()
+    plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_regulated_kinases_ROC_w_title.pdf")
+    plt.clf()
     plt.figure(figsize=(3, 3))
     plt.plot(method_1_fpr, method_1_tpr, lw=2, label=f"{method_1_name} (AUC = {method_1_roc_auc:.2f})")
     plt.plot(method_2_fpr, method_2_tpr, lw=2, label=f"{method_2_name} (AUC = {method_2_roc_auc:.2f})")
@@ -857,14 +859,14 @@ def pairwise_comparison(
     plt.legend(loc="lower right", frameon=False)
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_regulated_kinases_ROC.pdf")
+    plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_regulated_kinases_ROC.pdf")
     method_1_recall, method_1_precision, method_1_pr_auc = compute_pr(
         regulated_df["Regulation"], regulated_df[f"{method_1_name} Activity Score"]
     )
     method_2_recall, method_2_precision, method_2_pr_auc = compute_pr(
         regulated_df["Regulation"], regulated_df[f"{method_2_name} Activity Score"]
     )
-    plt.close()
+    plt.clf()
     plt.figure(figsize=(3.5, 3.5))
     plt.plot(
         method_1_recall, method_1_precision, lw=2, label=f"{method_1_name} (AUC = {method_1_pr_auc:.2f})"
@@ -888,8 +890,8 @@ def pairwise_comparison(
     )
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_regulated_kinases_PR_w_title.pdf")
-    plt.close()
+    plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_regulated_kinases_PR_w_title.pdf")
+    plt.clf()
     plt.figure(figsize=(3, 3))
     plt.plot(
         method_1_recall, method_1_precision, lw=2, label=f"{method_1_name} (AUC = {method_1_pr_auc:.2f})"
@@ -910,116 +912,4 @@ def pairwise_comparison(
     plt.legend(loc="lower left", frameon=False)
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_regulated_kinases_PR.pdf")
-
-def main():
-    input_list_phosx_txt = sys.argv[1]
-    input_list_gsea_txt = sys.argv[2]
-    input_list_kinex_txt = sys.argv[3]
-    input_list_kstar_txt = sys.argv[4]
-    input_list_ptmsea_txt = sys.argv[5]
-    input_list_zscore_txt = sys.argv[6]
-    metadata_tsv = sys.argv[7]
-    kinase_activity_metric_str = sys.argv[8]
-    out_prefix = sys.argv[9]
-    """
-    input_list_phosx_txt = 'input_files_phosx.txt'
-    input_list_gsea_txt = 'input_files_gsea.txt'
-    input_list_kinex_txt = 'input_files_kinex.txt'
-    input_list_kstar_txt = 'input_files_kstar.txt'
-    input_list_ptmsea_txt = 'input_files_ptmsea.txt'
-    input_list_zscore_txt = 'input_files_zscore.txt'
-    metadata_tsv = 'input/metadata.tsv'
-    kinase_activity_metric_str = 'Activity Score'
-    out_prefix = 'kinase_activity_benchmark/cptac/pairwise/'
-    """
-    
-    
-    # metadata - ground truth kinase regulation
-    metadata_df = pd.read_csv(metadata_tsv, sep="\t", index_col=None, header=None)
-    metadata_df.columns = ["Experiment", "Kinase", "Regulation"]
-    metadata_df.index = metadata_df.apply(
-        lambda x: f'{x["Experiment"]}__{x["Kinase"]}', axis=1
-    )
-
-
-    # PhosX kinase activity
-    kinase_activity_phosx_df = make_kinase_activity_df(
-        "PhosX",
-        input_list_phosx_txt,
-        kinase_activity_metric_str,
-        out_prefix,
-    )
-    
-    
-    gsea_kinase_activity_metric_str = "NES"
-
-
-    # GSEApy kinase activity
-    kinase_activity_gsea_df = make_kinase_activity_df(
-        "GSEA",  
-        input_list_gsea_txt,
-        gsea_kinase_activity_metric_str,
-        out_prefix,
-    )
-    
-    
-    pairwise_comparison(
-        "PhosX",
-        kinase_activity_phosx_df,
-        "GSEApy",
-        kinase_activity_gsea_df,
-        metadata_df,
-        out_prefix,
-    )
-    
-    
-    del kinase_activity_gsea_df
-   
-
-    # Kinex kinase activity
-    kinase_activity_kinex_df = make_kinase_activity_df(
-        "Kinex",
-        input_list_kinex_txt,
-        kinase_activity_metric_str,
-        out_prefix,
-    )
-
-
-    pairwise_comparison(
-        "PhosX",
-        kinase_activity_phosx_df,
-        "Kinex",
-        kinase_activity_kinex_df,
-        metadata_df,
-        out_prefix,
-    )
-    
-    
-    del kinase_activity_kinex_df
-    
-
-    # KSTAR kinase activity
-    kinase_activity_kstar_df = make_kinase_activity_df(
-        "KSTAR",
-        input_list_kstar_txt,
-        kinase_activity_metric_str,
-        out_prefix,
-    )
-    
-    
-    pairwise_comparison(
-        "PhosX",
-        kinase_activity_phosx_df,
-        "KSTAR",
-        kinase_activity_kstar_df,
-        metadata_df,
-        out_prefix,
-    )
-    
-    
-    del kinase_activity_kstar_df
-    
-
-if __name__ == "__main__":
-    main()
+    plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_regulated_kinases_PR.pdf")

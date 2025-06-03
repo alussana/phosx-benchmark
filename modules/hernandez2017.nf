@@ -271,150 +271,11 @@ process hernandez2017_make_rnk {
 
 }
 
+
 /*
-compute and plot distributions of auroc and precision at recall 50%, with the
-same procedure as in Hernandez2017
-<https://doi.org/10.1093/bioinformatics/btx082>
-i.e. take positive kinase-condition pairs, create negative set by drawing the
-same number of random  combinations of kinase-conditions pairs that are not in the positive set.
-Compute AUROC and AUPR. Reapeat 100 times.
 [...]
 */
 process benchmark_phosx_hernandez2017 {
-
-    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/hernandez2017/pairwise/*.pdf", mode: 'copy'
-
-    input:
-        path 'input/phosx/*.tsv'
-        path 'input/gsea/*.csv'
-        path 'input/kinex/*.tsv'
-        path 'input/kstar/*.tsv'
-        path 'input/ptmsea/*.tsv'
-        path 'input/zscore/*.tsv'
-        path 'input/metadata.tsv'
-
-    output:
-        path "kinase_activity_benchmark/hernandez2017/pairwise/*.pdf"
-
-    script:
-    """
-    mkdir -p kinase_activity_benchmark/hernandez2017/pairwise/
-    mkdir -p data/phosx
-    mkdir -p data/gsea
-    mkdir -p data/kinex
-    mkdir -p data/kstar
-    mkdir -p data/ptmsea
-    mkdir -p data/zscore
-
-    for file in \$(ls input/phosx/); do \
-        linkpath=\$(readlink -f input/phosx/"\$file"); \
-        echo "\$linkpath" >> symlink_paths_phosx.txt; \
-    done
-
-    for file in \$(cat symlink_paths_phosx.txt); do \
-        name_dot_tsv=\$(basename "\$file"); \
-        cp \$file data/phosx/\$name_dot_tsv; \
-        echo data/phosx/\$name_dot_tsv >> paths_phosx.txt; \
-    done
-
-    cat paths_phosx.txt | sort -g > input_files_phosx.txt
-
-
-    for file in \$(ls input/gsea/); do \
-        linkpath=\$(readlink -f input/gsea/"\$file"); \
-        echo "\$linkpath" >> symlink_paths_gsea.txt; \
-    done
-
-    for file in \$(cat symlink_paths_gsea.txt); do \
-        name_dot_tsv=\$(basename "\$file"); \
-        cp \$file data/gsea/\$name_dot_tsv; \
-        echo data/gsea/\$name_dot_tsv >> paths_gsea.txt; \
-    done
-
-    cat paths_gsea.txt | sort -g > input_files_gsea.txt
-
-
-    for file in \$(ls input/kinex/); do \
-        linkpath=\$(readlink -f input/kinex/"\$file"); \
-        echo "\$linkpath" >> symlink_paths_kinex.txt; \
-    done
-
-    for file in \$(cat symlink_paths_kinex.txt); do \
-        name_dot_tsv=\$(basename "\$file"); \
-        cp \$file data/kinex/\$name_dot_tsv; \
-        echo data/kinex/\$name_dot_tsv >> paths_kinex.txt; \
-    done
-
-    cat paths_kinex.txt | sort -g > input_files_kinex.txt
-
-
-    for file in \$(ls input/kstar/); do \
-        linkpath=\$(readlink -f input/kstar/"\$file"); \
-        echo "\$linkpath" >> symlink_paths_kstar.txt; \
-    done
-
-    for file in \$(cat symlink_paths_kstar.txt); do \
-        name_dot_tsv=\$(basename "\$file"); \
-        cp \$file data/kstar/\$name_dot_tsv; \
-        echo data/kstar/\$name_dot_tsv >> paths_kstar.txt; \
-    done
-
-    cat paths_kstar.txt | sort -g > input_files_kstar.txt
-
-
-    for file in \$(ls input/ptmsea/); do \
-        linkpath=\$(readlink -f input/ptmsea/"\$file"); \
-        echo "\$linkpath" >> symlink_paths_ptmsea.txt; \
-    done
-
-    for file in \$(cat symlink_paths_ptmsea.txt); do \
-        name_dot_tsv=\$(basename "\$file"); \
-        cp \$file data/ptmsea/\$name_dot_tsv; \
-        echo data/ptmsea/\$name_dot_tsv >> paths_ptmsea.txt; \
-    done
-
-    cat paths_ptmsea.txt | sort -g > input_files_ptmsea.txt
-
-
-    for file in \$(ls input/zscore/); do \
-        linkpath=\$(readlink -f input/zscore/"\$file"); \
-        echo "\$linkpath" >> symlink_paths_zscore.txt; \
-    done
-
-    for file in \$(cat symlink_paths_zscore.txt); do \
-        name_dot_tsv=\$(basename "\$file"); \
-        cp \$file data/zscore/\$name_dot_tsv; \
-        echo data/zscore/\$name_dot_tsv >> paths_zscore.txt; \
-    done
-
-    cat paths_zscore.txt | sort -g > input_files_zscore.txt
-
-
-    hernandez2017_phosx_kinase_activity_benchmark_pairwise.py \
-        input_files_phosx.txt \
-        input_files_gsea.txt \
-        input_files_kinex.txt \
-        input_files_kstar.txt \
-        input_files_ptmsea.txt \
-        input_files_zscore.txt \
-        input/metadata.tsv \
-        "${params.kinase_activity_metric}" \
-        kinase_activity_benchmark/hernandez2017/pairwise/
-    """
-
-}
-
-
-/*
-compute and plot distributions of auroc and precision at recall 50%, with the
-same procedure as in Hernandez2017
-<https://doi.org/10.1093/bioinformatics/btx082>
-i.e. take positive kinase-condition pairs, create negative set by drawing the
-same number of random  combinations of kinase-conditions pairs that are not in the positive set.
-Compute AUROC and AUPR. Reapeat 100 times.
-[...]
-*/
-process benchmark_phosx1_hernandez2017 {
 
     publishDir "${out_dir}", pattern: "kinase_activity_benchmark/hernandez2017/pairwise/*.pdf", mode: 'copy'
 
@@ -433,6 +294,12 @@ process benchmark_phosx1_hernandez2017 {
 
     script:
     """
+    if [ -z "\${PYTHONPATH:-}" ]; then \\
+        export PYTHONPATH="${projectDir}/src"; \\
+    else \\
+        export PYTHONPATH="${projectDir}/src:\$PYTHONPATH"; \\
+    fi
+
     mkdir -p kinase_activity_benchmark/hernandez2017/pairwise/
     mkdir -p data/phosx
     mkdir -p data/gsea
@@ -540,7 +407,7 @@ process benchmark_phosx1_hernandez2017 {
     cat paths_phosxnouae.txt | sort -g > input_files_phosxnouae.txt
 
 
-    hernandez2017_phosx1_kinase_activity_benchmark_pairwise.py \
+    hernandez2017_phosx_kinase_activity_benchmark_pairwise.py \
         input_files_phosx.txt \
         input_files_gsea.txt \
         input_files_kinex.txt \
@@ -557,149 +424,9 @@ process benchmark_phosx1_hernandez2017 {
 
 
 /*
-compute and plot distributions of auroc and precision at recall 50%, with the
-same procedure as in Hernandez2017
-<https://doi.org/10.1093/bioinformatics/btx082>
-i.e. take positive kinase-condition pairs, create negative set by drawing the
-same number of random  combinations of kinase-conditions pairs that are not in the positive set.
-Compute AUROC and AUPR. Reapeat 100 times.
 [...]
 */
 process benchmark_phosx_per_kinase_hernandez2017 {
-
-    publishDir "${out_dir}", pattern: "kinase_activity_benchmark/hernandez2017/pairwise/*.pdf", mode: 'copy'
-
-    input:
-        path 'input/phosx/*.tsv'
-        path 'input/gsea/*.csv'
-        path 'input/kinex/*.tsv'
-        path 'input/kstar/*.tsv'
-        path 'input/ptmsea/*.tsv'
-        path 'input/zscore/*.tsv'
-        path 'input/metadata.tsv'
-
-    output:
-        path "kinase_activity_benchmark/hernandez2017/pairwise/*.pdf"
-
-    script:
-    """
-    mkdir -p kinase_activity_benchmark/hernandez2017/pairwise/
-    mkdir -p data/phosx
-    mkdir -p data/gsea
-    mkdir -p data/kinex
-    mkdir -p data/kstar
-    mkdir -p data/ptmsea
-    mkdir -p data/zscore
-
-    for file in \$(ls input/phosx/); do \
-        linkpath=\$(readlink -f input/phosx/"\$file"); \
-        echo "\$linkpath" >> symlink_paths_phosx.txt; \
-    done
-
-    for file in \$(cat symlink_paths_phosx.txt); do \
-        name_dot_tsv=\$(basename "\$file"); \
-        cp \$file data/phosx/\$name_dot_tsv; \
-        echo data/phosx/\$name_dot_tsv >> paths_phosx.txt; \
-    done
-
-    cat paths_phosx.txt | sort -g > input_files_phosx.txt
-
-
-    for file in \$(ls input/gsea/); do \
-        linkpath=\$(readlink -f input/gsea/"\$file"); \
-        echo "\$linkpath" >> symlink_paths_gsea.txt; \
-    done
-
-    for file in \$(cat symlink_paths_gsea.txt); do \
-        name_dot_tsv=\$(basename "\$file"); \
-        cp \$file data/gsea/\$name_dot_tsv; \
-        echo data/gsea/\$name_dot_tsv >> paths_gsea.txt; \
-    done
-
-    cat paths_gsea.txt | sort -g > input_files_gsea.txt
-
-
-    for file in \$(ls input/kinex/); do \
-        linkpath=\$(readlink -f input/kinex/"\$file"); \
-        echo "\$linkpath" >> symlink_paths_kinex.txt; \
-    done
-
-    for file in \$(cat symlink_paths_kinex.txt); do \
-        name_dot_tsv=\$(basename "\$file"); \
-        cp \$file data/kinex/\$name_dot_tsv; \
-        echo data/kinex/\$name_dot_tsv >> paths_kinex.txt; \
-    done
-
-    cat paths_kinex.txt | sort -g > input_files_kinex.txt
-
-
-    for file in \$(ls input/kstar/); do \
-        linkpath=\$(readlink -f input/kstar/"\$file"); \
-        echo "\$linkpath" >> symlink_paths_kstar.txt; \
-    done
-
-    for file in \$(cat symlink_paths_kstar.txt); do \
-        name_dot_tsv=\$(basename "\$file"); \
-        cp \$file data/kstar/\$name_dot_tsv; \
-        echo data/kstar/\$name_dot_tsv >> paths_kstar.txt; \
-    done
-
-    cat paths_kstar.txt | sort -g > input_files_kstar.txt
-
-
-    for file in \$(ls input/ptmsea/); do \
-        linkpath=\$(readlink -f input/ptmsea/"\$file"); \
-        echo "\$linkpath" >> symlink_paths_ptmsea.txt; \
-    done
-
-    for file in \$(cat symlink_paths_ptmsea.txt); do \
-        name_dot_tsv=\$(basename "\$file"); \
-        cp \$file data/ptmsea/\$name_dot_tsv; \
-        echo data/ptmsea/\$name_dot_tsv >> paths_ptmsea.txt; \
-    done
-
-    cat paths_ptmsea.txt | sort -g > input_files_ptmsea.txt
-
-
-    for file in \$(ls input/zscore/); do \
-        linkpath=\$(readlink -f input/zscore/"\$file"); \
-        echo "\$linkpath" >> symlink_paths_zscore.txt; \
-    done
-
-    for file in \$(cat symlink_paths_zscore.txt); do \
-        name_dot_tsv=\$(basename "\$file"); \
-        cp \$file data/zscore/\$name_dot_tsv; \
-        echo data/zscore/\$name_dot_tsv >> paths_zscore.txt; \
-    done
-
-    cat paths_zscore.txt | sort -g > input_files_zscore.txt
-
-
-    hernandez2017_phosx_kinase_activity_benchmark_pairwise_per_kinase_insights.py \
-        input_files_phosx.txt \
-        input_files_gsea.txt \
-        input_files_kinex.txt \
-        input_files_kstar.txt \
-        input_files_ptmsea.txt \
-        input_files_zscore.txt \
-        input/metadata.tsv \
-        "${params.kinase_activity_metric}" \
-        kinase_activity_benchmark/hernandez2017/pairwise/
-    """
-
-}
-
-
-/*
-compute and plot distributions of auroc and precision at recall 50%, with the
-same procedure as in Hernandez2017
-<https://doi.org/10.1093/bioinformatics/btx082>
-i.e. take positive kinase-condition pairs, create negative set by drawing the
-same number of random  combinations of kinase-conditions pairs that are not in the positive set.
-Compute AUROC and AUPR. Reapeat 100 times.
-[...]
-*/
-process benchmark_phosx1_per_kinase_hernandez2017 {
 
     publishDir "${out_dir}", pattern: "kinase_activity_benchmark/hernandez2017/pairwise/*.pdf", mode: 'copy'
 
@@ -718,6 +445,12 @@ process benchmark_phosx1_per_kinase_hernandez2017 {
 
     script:
     """
+    if [ -z "\${PYTHONPATH:-}" ]; then \\
+        export PYTHONPATH="${projectDir}/src"; \\
+    else \\
+        export PYTHONPATH="${projectDir}/src:\$PYTHONPATH"; \\
+    fi
+
     mkdir -p kinase_activity_benchmark/hernandez2017/pairwise/
     mkdir -p data/phosx
     mkdir -p data/gsea
@@ -825,7 +558,7 @@ process benchmark_phosx1_per_kinase_hernandez2017 {
     cat paths_phosxnouae.txt | sort -g > input_files_phosxnouae.txt
 
     
-    hernandez2017_phosx1_kinase_activity_benchmark_pairwise_per_kinase_insights.py \
+    hernandez2017_phosx_kinase_activity_benchmark_pairwise_per_kinase_insights.py \
         input_files_phosx.txt \
         input_files_gsea.txt \
         input_files_kinex.txt \

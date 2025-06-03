@@ -5,3 +5,4 @@ misc/*.svg.*
 output/
 *.bck
 *.tmp
+*__pycache__*

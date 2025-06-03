@@ -3,10 +3,10 @@
 import pandas as pd
 import sys
 
-from pairwise_comparisons.kinomics import make_kinase_activity_df, pairwise_comparison
+from pairwise_comparisons.kinomics_per_kinase import make_kinase_activity_df, pairwise_comparison
 
 
-def main():
+def main():       
     input_list_phosx_txt = sys.argv[1]
     input_list_gsea_txt = sys.argv[2]
     input_list_kinex_txt = sys.argv[3]
@@ -15,18 +15,8 @@ def main():
     metadata_tsv = sys.argv[6]
     kinase_activity_metric_str = sys.argv[7]
     out_prefix = sys.argv[8]
-    """
-    input_list_phosx_txt = 'input_files_phosx.txt'
-    input_list_gsea_txt = 'input_files_gsea.txt'
-    input_list_kinex_txt = 'input_files_kinex.txt'
-    input_list_kstar_txt = 'input_files_kstar.txt'
-    input_list_phosxnouae_txt = 'input_files_phosxnouae.txt'
-    metadata_tsv = 'input/metadata.tsv'
-    kinase_activity_metric_str = 'Activity Score'
-    out_prefix = 'kinase_activity_benchmark/kinomics/pairwise/'
-    """
-    
-    
+
+   
     # metadata - ground truth kinase regulation
     metadata_df = pd.read_csv(metadata_tsv, sep="\t", index_col=None, header=None)
     metadata_df.columns = ["Experiment", "Kinase", "Regulation"]
@@ -47,32 +37,6 @@ def main():
     )
 
 
-    # PhosX (No UAE) kinase activity
-    kinase_activity_phosxnouae_df = make_kinase_activity_df(
-        "PhosX-NoUAE",
-        input_list_phosxnouae_txt,
-        kinase_activity_metric_str,
-        out_prefix,
-    )
-
-
-    # GSEApy kinase activity
-    kinase_activity_gsea_df = make_kinase_activity_df(
-        "GSEA",  
-        input_list_gsea_txt,
-        gsea_kinase_activity_metric_str,
-        out_prefix,
-    )
-   
-
-    # Kinex kinase activity
-    kinase_activity_kinex_df = make_kinase_activity_df(
-        "Kinex",
-        input_list_kinex_txt,
-        kinase_activity_metric_str,
-        out_prefix,
-    )
-
     # KSTAR kinase activity
     kinase_activity_kstar_df = make_kinase_activity_df(
         "KSTAR",
@@ -82,20 +46,21 @@ def main():
     )
     
 
+    # PhosX (no upstream activation evidence) kinase activity
+    kinase_activity_phosxnouae_df = make_kinase_activity_df(
+        "PhosX-NoUAE",
+        input_list_phosxnouae_txt,
+        kinase_activity_metric_str,
+        out_prefix,
+    )
+
+    
     # Pairwise comparisons: PhosX vs <method>
     pairwise_comparison(
         "PhosX",
         kinase_activity_phosx_df,
         "Kinex",
         kinase_activity_kinex_df,
-        metadata_df,
-        out_prefix,
-    )
-    pairwise_comparison(
-        "PhosX",
-        kinase_activity_phosx_df,
-        "PhosX-NoUAE",
-        kinase_activity_phosxnouae_df,
         metadata_df,
         out_prefix,
     )
@@ -112,6 +77,14 @@ def main():
         kinase_activity_phosx_df,
         "KSTAR",
         kinase_activity_kstar_df,
+        metadata_df,
+        out_prefix,
+    )
+    pairwise_comparison(
+        "PhosX",
+        kinase_activity_phosx_df,
+        "PhosX-NoUAE",
+        kinase_activity_phosxnouae_df,
         metadata_df,
         out_prefix,
     )
@@ -142,7 +115,7 @@ def main():
         metadata_df,
         out_prefix,
     )
-    
+
 
 if __name__ == "__main__":
     main()
