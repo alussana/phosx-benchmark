@@ -14,6 +14,7 @@ include { IDa2uniprot2IDb } from './modules/uniprot_id_dict'
 include { dl_string_aliases } from './modules/string_id_dict'
 
 include { psp_kinase_substrates } from './modules/psp'
+include { kinase_substrates_histograms } from './modules/psp'
 include { kin_phos_clusters } from './modules/psp'
 include { translate_kin_phos_clusters } from './modules/psp'
 include { hs_phosphoproteome } from './modules/psp'
@@ -145,6 +146,10 @@ workflow PSP {
 
     main:
         kinase_substrates = psp_kinase_substrates( psp_kinase_substrates_dataset_gz )
+
+        // make histograms of kinase and phosphosites frequencies in kinase-substrate pairs
+        kinase_substrates_histograms( kinase_substrates )
+
         kin_sub_clusters_untranslated = kin_phos_clusters( kinase_substrates )
         kin_sub_clusters = translate_kin_phos_clusters( kin_sub_clusters_untranslated,
                                                         string_id_dict )
@@ -741,12 +746,12 @@ workflow BENCHMARK_PHOSX_KINOMICS {
                                  phosxnouae_output,
                                  metadata )
 
-        benchmark_phosx_per_kinase_kinomics(phosx_output,
+        /*benchmark_phosx_per_kinase_kinomics(phosx_output,
                                             gsea_output,
                                             kinex_output,
                                             kstar_output,
                                             phosxnouae_output,
-                                            metadata )
+                                            metadata )*/
 
 }
 
@@ -880,12 +885,12 @@ workflow {
 
 
     // performance comparison on kinomics
-    BENCHMARK_PHOSX_KINOMICS( phosx_kinomics,
+    /*BENCHMARK_PHOSX_KINOMICS( phosx_kinomics,
                               gsea_kinomics,
                               kinex_kinomics,
                               kstar_kinomics,
                               phosxnouae_kinomics,
-                              kinomics.metadata )
+                              kinomics.metadata )*/
 
     // publish nextflow config
     PUBLISH_CONFIG()

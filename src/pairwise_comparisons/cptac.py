@@ -10,6 +10,15 @@ from itertools import product
 from random import sample
 
 
+plt.rcParams['axes.titlesize'] = 8        
+plt.rcParams['axes.labelsize'] = 6        
+plt.rcParams['xtick.labelsize'] = 6       
+plt.rcParams['ytick.labelsize'] = 6       
+plt.rcParams['legend.fontsize'] = 6       
+plt.rcParams['figure.titlesize'] = 8   
+plt.rcParams['font.size'] = 6 
+
+
 def quantile_normalize(df: pd.DataFrame):
     """
     Perform quantile normalization on a pandas DataFrame.
@@ -216,6 +225,57 @@ def bottom10percentKinasesFraction(
     return (top10percentScore, top10percentScore_total)
 
 
+"""def make_kinase_activity_df(
+    method_name:str,
+    input_list_txt:str,
+    kinase_activity_metric:str,
+    out_prefix:str,
+):
+    # build dictionary (experiment id --> kinase activity table path)
+    data_path_dict = {}
+    with open(input_list_txt, "r") as input_list_fh:
+        for line in input_list_fh:
+            data_path_str = line.strip()
+            data_id = os.path.basename(data_path_str)[:-4]
+            data_path_dict[data_id] = data_path_str
+    # build dataframe of kinase activities
+    kinase_activity_df = pd.DataFrame()
+    for data_id in data_path_dict.keys():
+        df = pd.read_csv(data_path_dict[data_id], sep="\t", index_col=0)
+        if len(df.columns) == 0:
+            df = pd.read_csv(data_path_dict[data_id], sep=",", index_col=0)
+        series = df[kinase_activity_metric]
+        series.fillna(0, inplace=True)
+        series.name = data_id
+        kinase_activity_df = kinase_activity_df.join(series, how="outer")
+    # normalise and scale
+    kinase_activity_df = quantile_normalize(kinase_activity_df)
+    kinase_activity_df = scale_01(kinase_activity_df)
+    # melt
+    kinase_activity_df = pd.melt(
+        kinase_activity_df.assign(index=kinase_activity_df.index),
+        id_vars=["index"],
+    )
+    kinase_activity_df.columns = [
+        "Kinase",
+        "Experiment",
+        "Kinase activity change",
+    ]
+    # remove NAs due to missing phosphosite sequence
+    kinase_activity_df = kinase_activity_df.dropna()
+    # make index
+    kinase_activity_df.index = kinase_activity_df.apply(
+        lambda x: f'{x["Experiment"]}__{x["Kinase"]}', axis=1
+    )
+    kinase_activity_df.to_csv(
+        f"{out_prefix}cptac_kinase_activity_{method_name}.tsv",
+        header=True,
+        index=True,
+        sep="\t",
+    )
+    return kinase_activity_df"""
+
+
 def make_kinase_activity_df(
     method_name:str,
     input_list_txt:str,
@@ -376,8 +436,11 @@ def pairwise_comparison(
         .melt()
     )
     downreg_true_kinase_quantile_df.columns = ["Method", "Normalized rank"]
-    plt.close()
-    plt.figure(figsize=[2.5, 2.5])
+    n_upreg = len(upreg_true_kinase_quantile_df) // 2
+    n_downreg = len(downreg_true_kinase_quantile_df) // 2
+    n_joined = len(joined_true_kinase_quantile_df) // 2
+    plt.clf()
+    plt.figure(figsize=[2.5, 3])
     ax = sns.violinplot(
         data=joined_true_kinase_quantile_df,
         x="Method",
@@ -385,13 +448,15 @@ def pairwise_comparison(
         cut=0,
         #hue="Method",
     )
+    ax.set_title(
+        f"Shared positive examples\n(n={n_joined})"
+    )
     #ax.set_yticks(np.arange(0, 1.1, 0.1))
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_joined_true_kinase_quantile.pdf")
-    plt.close()
-    plt.close()
-    plt.figure(figsize=[2.5, 2.5])
+    plt.clf()
+    plt.figure(figsize=[2.5, 3])
     ax = sns.violinplot(
         data=upreg_true_kinase_quantile_df,
         x="Method",
@@ -399,18 +464,24 @@ def pairwise_comparison(
         cut=0,
         #hue="Method",
     )
+    ax.set_title(
+        f"Shared positive examples\n(activation, n={n_upreg})"
+    )
     #ax.set_yticks(np.arange(0, 1.1, 0.1))
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_upreg_true_kinase_quantile.pdf")
-    plt.close()
-    plt.figure(figsize=[2.5, 2.5])
+    plt.clf()
+    plt.figure(figsize=[2.5, 3])
     ax = sns.violinplot(
         data=downreg_true_kinase_quantile_df,
         x="Method",
         y="Normalized rank",
         cut=0,
         #hue="Method",
+    )
+    ax.set_title(
+        f"Shared positive examples\n(inhibition, n={n_downreg})"
     )
     #ax.set_yticks(np.arange(0, 1.1, 0.1))
     sns.despine()
@@ -448,7 +519,7 @@ def pairwise_comparison(
             "Method": [method_1_name, method_2_name],
         }
     )
-    plt.close()
+    plt.clf()
     plt.figure(figsize=[2, 3])
     ax = tp_percentage_df.set_index("Method").plot(
         kind="bar", stacked=True, color=["red", "blue"], alpha=0.5, figsize=(2.2, 2.6)
@@ -500,7 +571,7 @@ def pairwise_comparison(
             "Method": [method_1_name, method_2_name],
         }
     )
-    plt.close()
+    plt.clf()
     plt.figure(figsize=[2, 3])
     ax = tp_percentage_df.set_index("Method").plot(
         kind="bar", stacked=True, color=["red", "blue"], alpha=0.5, figsize=(2.2, 2.6)
@@ -625,7 +696,7 @@ def pairwise_comparison(
         for x in downregulation_negative_indexes_list
         if x in kinase_activity_method_2_df.index
     ]
-    for i in range(64):
+    for i in range(256):
         # randomly sample neg ex in equal number as the pos ex, for up- and down- regulation separately
         upreg_neg_idx_list = sample(
             upregulation_method_2_negative_indexes_list,
@@ -693,7 +764,8 @@ def pairwise_comparison(
     data.columns = ["Metric", "Value"]
     data["Method"] = [method_2_name for i in range(len(data))]
     violinplots_joined_df = pd.concat([violinplots_joined_df, data])
-    plt.close()
+    """
+    plt.clf()
     plt.figure(figsize=[3.5, 3.5])
     ax = sns.violinplot(
         data=violinplots_upreg_df, x="Metric", y="Value", hue="Method", cut=0
@@ -707,7 +779,7 @@ def pairwise_comparison(
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_upreg_auc_prc_violinplots_w_title.pdf")
-    plt.close()
+    plt.clf()
     plt.figure(figsize=[3.5, 3.5])
     ax = sns.violinplot(
         data=violinplots_downreg_df, x="Metric", y="Value", hue="Method", cut=0
@@ -721,7 +793,7 @@ def pairwise_comparison(
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_downreg_auc_prc_violinplots_w_title.pdf")
-    plt.close()
+    plt.clf()
     plt.figure(figsize=[3.5, 3.5])
     ax = sns.violinplot(
         data=violinplots_joined_df, x="Metric", y="Value", hue="Method", cut=0
@@ -735,37 +807,46 @@ def pairwise_comparison(
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_joined_auc_prc_violinplots_w_title.pdf")
-
-    plt.close()
-    plt.figure(figsize=[2.5, 2.5])
+    """
+    plt.clf()
+    plt.figure(figsize=[2.5, 3])
     ax = sns.violinplot(
         data=violinplots_upreg_df, x="Metric", y="Value", hue="Method", cut=0
     )
     plt.ylim([0.0, 1.0])
-    plt.axhline(y=0.5, color="grey", linestyle="--", linewidth=2)
+    plt.axhline(y=0.5, color="grey", linestyle="--", linewidth=1)
+    ax.set_title(
+        f"Shared positive examples\n(activation, n={n_upreg_method_1})"
+    )
     plt.legend(loc="lower right", frameon=False)
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_upreg_auc_prc_violinplots.pdf")
 
-    plt.close()
-    plt.figure(figsize=[2.5, 2.5])
+    plt.clf()
+    plt.figure(figsize=[2.5, 3])
     ax = sns.violinplot(
         data=violinplots_downreg_df, x="Metric", y="Value", hue="Method", cut=0
     )
     plt.ylim([0.0, 1.0])
-    plt.axhline(y=0.5, color="grey", linestyle="--", linewidth=2)
+    plt.axhline(y=0.5, color="grey", linestyle="--", linewidth=1)
+    ax.set_title(
+        f"Shared positive examples\n(inhibition, n={n_downreg_method_1})"
+    )
     plt.legend(loc="lower right", frameon=False)
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_downreg_auc_prc_violinplots.pdf")
-    plt.close()
-    plt.figure(figsize=[2.5, 2.5])
+    plt.clf()
+    plt.figure(figsize=[2.5, 3])
     ax = sns.violinplot(
         data=violinplots_joined_df, x="Metric", y="Value", hue="Method", cut=0
     )
     plt.ylim([0.0, 1.0])
-    plt.axhline(y=0.5, color="grey", linestyle="--", linewidth=2)
+    plt.axhline(y=0.5, color="grey", linestyle="--", linewidth=1)
+    ax.set_title(
+        f"Shared positive examples\n(n={n_upreg_method_1 + n_downreg_method_1})"
+    )
     plt.legend(loc="lower right", frameon=False)
     sns.despine()
     plt.tight_layout()
@@ -783,7 +864,7 @@ def pairwise_comparison(
         )
         .merge(kinase_activity_method_2_df, on=["Experiment", "Kinase"], how="left")
     )
-    plt.close()
+    plt.clf()
     plt.figure(figsize=(3, 3))
     #plt.ylim([0, 30])
     sns.histplot(
@@ -806,7 +887,7 @@ def pairwise_comparison(
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_in_{method_1_name}_{method_2_name}_score_regulated_kinases.pdf")
-    plt.close()
+    plt.clf()
     plt.figure(figsize=(3, 3))
     #plt.ylim([0, 30])
     sns.histplot(
@@ -841,7 +922,8 @@ def pairwise_comparison(
     class_imbalance = n_upregulated / (n_upregulated + n_downregulated)
     if class_imbalance < 0.5:
         class_imbalance = 1 / class_imbalance
-    plt.close()
+    """
+    plt.clf()
     plt.figure(figsize=(3.5, 3.5))
     plt.plot(method_1_fpr, method_1_tpr, lw=2, label=f"{method_1_name} (AUC = {method_1_roc_auc:.2f})")
     plt.plot(method_2_fpr, method_2_tpr, lw=2, label=f"{method_2_name} (AUC = {method_2_roc_auc:.2f})")
@@ -857,7 +939,8 @@ def pairwise_comparison(
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_regulated_kinases_ROC_w_title.pdf")
-    plt.close()
+    """
+    plt.clf()
     plt.figure(figsize=(3, 3))
     plt.plot(method_1_fpr, method_1_tpr, lw=2, label=f"{method_1_name} (AUC = {method_1_roc_auc:.2f})")
     plt.plot(method_2_fpr, method_2_tpr, lw=2, label=f"{method_2_name} (AUC = {method_2_roc_auc:.2f})")
@@ -867,6 +950,9 @@ def pairwise_comparison(
     plt.xlabel("FPR")
     plt.ylabel("TPR")
     plt.legend(loc="lower right", frameon=False)
+    plt.title(
+        f"Shared positive examples\n(activation, n={n_upregulated}; inhibition, n={n_downregulated})"
+    )
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_regulated_kinases_ROC.pdf")
@@ -876,7 +962,8 @@ def pairwise_comparison(
     method_2_recall, method_2_precision, method_2_pr_auc = compute_pr(
         regulated_df["Regulation"], regulated_df[f"{method_2_name} Activity Score"]
     )
-    plt.close()
+    """
+    plt.clf()
     plt.figure(figsize=(3.5, 3.5))
     plt.plot(
         method_1_recall, method_1_precision, lw=2, label=f"{method_1_name} (AUC = {method_1_pr_auc:.2f})"
@@ -901,7 +988,8 @@ def pairwise_comparison(
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_regulated_kinases_PR_w_title.pdf")
-    plt.close()
+    """
+    plt.clf()
     plt.figure(figsize=(3, 3))
     plt.plot(
         method_1_recall, method_1_precision, lw=2, label=f"{method_1_name} (AUC = {method_1_pr_auc:.2f})"
@@ -920,6 +1008,9 @@ def pairwise_comparison(
     plt.xlabel("Recall")
     plt.ylabel("Precision")
     plt.legend(loc="lower left", frameon=False)
+    plt.title(
+        f"Shared positive examples\n(activation, n={n_upregulated}; inhibition, n={n_downregulated})"
+    )
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_regulated_kinases_PR.pdf")

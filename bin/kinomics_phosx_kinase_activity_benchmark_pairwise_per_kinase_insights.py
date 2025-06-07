@@ -37,6 +37,24 @@ def main():
     )
 
 
+    # GSEApy kinase activity
+    kinase_activity_gsea_df = make_kinase_activity_df(
+        "GSEApy",
+        input_list_gsea_txt,
+        gsea_kinase_activity_metric_str,
+        out_prefix,
+    )
+    
+
+    # Kinex kinase activity
+    kinase_activity_kinex_df = make_kinase_activity_df(
+        "Kinex",
+        input_list_kinex_txt,
+        kinase_activity_metric_str,
+        out_prefix,
+    )
+
+
     # KSTAR kinase activity
     kinase_activity_kstar_df = make_kinase_activity_df(
         "KSTAR",

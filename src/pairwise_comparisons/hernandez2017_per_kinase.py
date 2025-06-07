@@ -6,7 +6,17 @@ import os
 import matplotlib.pyplot as plt
 import gc 
 from functools import partial
-import dask.dataframe as dd 
+import dask.dataframe as dd
+
+
+plt.rcParams['axes.titlesize'] = 8        
+plt.rcParams['axes.labelsize'] = 5        
+plt.rcParams['xtick.labelsize'] = 6       
+plt.rcParams['ytick.labelsize'] = 6       
+plt.rcParams['legend.fontsize'] = 6       
+plt.rcParams['figure.titlesize'] = 8   
+plt.rcParams['font.size'] = 6 
+
 
 def quantile_normalize(df):
     """
@@ -54,7 +64,7 @@ def quantile_normalize(df):
         
         return result
     else:
-        # Original implementation for smaller dataframes
+        # for smaller dataframes
         ranked = df.stack().groupby(df.rank(method="first").stack().astype(int)).mean()
         quantiles = df.rank(method="min").stack().astype(int).map(ranked).unstack()
         return quantiles.sort_index()
@@ -367,6 +377,7 @@ def pairwise_comparison(
         ax.text(angle, max(max(values_1), max(values_2)) + 2, label, ha='center', va='center')
     fig.subplots_adjust(left=0.2, right=0.8, top=0.8, bottom=0.2)
     ax.legend(loc='upper right', frameon=False, bbox_to_anchor=(1.3, 1.3))
+    plt.tight_layout()
     plt.savefig(f"{out_prefix}hernandez2017_{method_1_name}_{method_2_name}_topNpercentKinases_radial.pdf")
     
     return hit_count_df

@@ -54,6 +54,46 @@ process psp_kinase_substrates {
 
 }
 
+
+/*
+[...]
+*/
+process kinase_substrates_histograms {
+
+    publishDir "${out_dir}",
+            pattern: 'datasets/psp/*.pdf',
+            mode: 'copy'
+
+    input:
+        path 'input/kinase_substrates.tsv'
+
+    output:
+        path 'datasets/psp/kinase_frequency_histogram.pdf'
+
+    script:
+    """
+    mkdir -p datasets/psp
+
+    cat input/kinase_substrates.tsv \
+        | cut -f3,6,8 | sed '1d' \
+        | awk '{print \$1"\\t"\$2"_"\$3}' \
+        > kin_phos.tsv
+
+    cat input/kinase_substrates.tsv \
+        | cut -f3,6 | sed '1d' \
+        > kin_sub.tsv
+
+    kin_phos_sub_hist.py \
+        kin_phos.tsv \
+        kin_sub.tsv \
+        datasets/psp/kinase_frequency_histogram.pdf \
+        datasets/psp/phosphosite_frequency_histogram.pdf \
+        datasets/psp/substrate_frequency_histogram.pdf
+    """
+
+}
+
+
 /*
 .META:
 1   Kinase Name
