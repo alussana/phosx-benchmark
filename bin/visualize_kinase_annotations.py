@@ -13,6 +13,15 @@ family_bar_pdf = 'datasets/hernandez2017/kinase_family_regulation_counts.pdf'
 """
 
 
+plt.rcParams['axes.titlesize'] = 8        
+plt.rcParams['axes.labelsize'] = 6        
+plt.rcParams['xtick.labelsize'] = 6       
+plt.rcParams['ytick.labelsize'] = 6       
+plt.rcParams['legend.fontsize'] = 6       
+plt.rcParams['figure.titlesize'] = 8   
+plt.rcParams['font.size'] = 6 
+
+
 kinase_family_colors = {
     "AGC": "#00BA38",
     "CMGC": "#00C19F",
@@ -63,16 +72,16 @@ def plot_kinase_family_regulation_counts(df, x_labels, bar_pdf):
     )
 
     # Define a color palette
-    palette = {"Activation": (1, 0, 0, 0.5), "Inhibition": (0, 0, 1, 0.5)}
+    palette = {"Activation": "#FF000080", "Inhibition": "#0000FF80"}
 
     legend_elements = [
-        Patch(facecolor=(1, 0, 0, 0.5), label="Activation"),
-        Patch(facecolor=(0, 0, 1, 0.5), label="Inhibition"),
+        Patch(facecolor=palette["Activation"], label="Activation"),
+        Patch(facecolor=palette["Inhibition"], label="Inhibition"),
     ]
 
     # Create the barplot
     plt.clf()
-    plt.figure(figsize=(7, 4))
+    plt.figure(figsize=(4.0, 2.5))
     ax = sns.barplot(
         x="Family",
         y="Count",
@@ -81,6 +90,10 @@ def plot_kinase_family_regulation_counts(df, x_labels, bar_pdf):
         palette=palette,
         order=x_labels,
     )
+
+    # Set alpha for all bars after creation
+    for patch in ax.patches:
+        patch.set_alpha(0.5)
 
     # Customize the plot
     plt.xlabel("Kinase family")
@@ -123,16 +136,17 @@ def plot_kinase_specificity_regulation_counts(df, x_labels, bar_pdf):
     )
 
     # Define a color palette
-    palette = {"Activation": (1, 0, 0, 0.5), "Inhibition": (0, 0, 1, 0.5)}
+    palette = {"Activation": "#FF000080", "Inhibition": "#0000FF80"}
+
 
     legend_elements = [
-        Patch(facecolor=(1, 0, 0, 0.5), label="Activation"),
-        Patch(facecolor=(0, 0, 1, 0.5), label="Inhibition"),
+        Patch(facecolor=palette["Activation"], label="Activation"),
+        Patch(facecolor=palette["Inhibition"], label="Inhibition"),
     ]
 
     # Create the barplot
     plt.clf()
-    plt.figure(figsize=(3, 4))
+    plt.figure(figsize=(1.75, 2.5))
     ax = sns.barplot(
         x="Specificity",
         y="Count",
@@ -141,6 +155,10 @@ def plot_kinase_specificity_regulation_counts(df, x_labels, bar_pdf):
         palette=palette,
         order=x_labels,
     )
+
+    # Set alpha for all bars after creation
+    for patch in ax.patches:
+        patch.set_alpha(0.5)
 
     # Customize the plot
     plt.xlabel("Kinase specificity")

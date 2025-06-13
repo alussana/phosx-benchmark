@@ -18,6 +18,9 @@ plt.rcParams['figure.titlesize'] = 8
 plt.rcParams['font.size'] = 6 
 
 
+plt.rcParams['axes.prop_cycle'] = plt.cycler(color=['red', 'black'])
+
+
 def quantile_normalize(df):
     """
     Memory-efficient quantile normalization
@@ -369,12 +372,13 @@ def pairwise_comparison(
     values_1 += values_1[:1]
     values_2 += values_2[:1]
     angles += angles[:1]
-    fig, ax = plt.subplots(figsize=(4, 4), subplot_kw={'projection': 'polar'})
-    ax.plot(angles, values_1, marker='o', label=method_1_name)
-    ax.plot(angles, values_2, marker='x', linestyle='--', label=method_2_name)
+    max_value = max(max(values_1), max(values_2))
+    fig, ax = plt.subplots(figsize=(2.5, 2.5), subplot_kw={'projection': 'polar'})
+    ax.plot(angles, values_1, marker='o', label=method_1_name, linewidth=0.8, markersize=3)
+    ax.plot(angles, values_2, marker='x', linestyle='--', label=method_2_name, linewidth=0.8, markersize=3)
     ax.set_xticklabels([])
     for angle, label in zip(angles, labels):
-        ax.text(angle, max(max(values_1), max(values_2)) + 2, label, ha='center', va='center')
+        ax.text(angle, max_value * 1.3, label, ha='center', va='center')
     fig.subplots_adjust(left=0.2, right=0.8, top=0.8, bottom=0.2)
     ax.legend(loc='upper right', frameon=False, bbox_to_anchor=(1.3, 1.3))
     plt.tight_layout()
