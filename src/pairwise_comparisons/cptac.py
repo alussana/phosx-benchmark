@@ -3,6 +3,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 import seaborn as sns
 import os
 from sklearn.metrics import roc_curve, auc, precision_recall_curve
@@ -16,7 +17,11 @@ plt.rcParams['xtick.labelsize'] = 6
 plt.rcParams['ytick.labelsize'] = 6       
 plt.rcParams['legend.fontsize'] = 6       
 plt.rcParams['figure.titlesize'] = 8   
-plt.rcParams['font.size'] = 6 
+plt.rcParams['font.size'] = 6
+
+
+custom_palette = sns.color_palette(["red", "grey"])
+sns.set_palette(custom_palette)
 
 
 def quantile_normalize(df: pd.DataFrame):
@@ -46,15 +51,13 @@ def scale_01(df):
     return scaled_df
 
 
-def compute_pr(labels, scores, n_points=200):
+def compute_pr(labels, scores, n_points=512):
     precision, recall, thresholds = precision_recall_curve(labels, scores)
-    interp_recall = np.linspace(0, 1, n_points)
-    interp_precision = np.interp(x=interp_recall, xp=precision, fp=recall)
     roc_auc = auc(recall, precision)
-    return (interp_recall, interp_precision, roc_auc)
+    return (recall, precision, roc_auc)
 
 
-def compute_roc(labels, scores, n_points=200):
+def compute_roc(labels, scores, n_points=512):
     fpr, tpr, thresholds = roc_curve(labels, scores)
     interp_fpr = np.linspace(0, 1, n_points)
     interp_tpr = np.interp(x=interp_fpr, xp=fpr, fp=tpr)
@@ -344,6 +347,8 @@ def pairwise_comparison(
     metadata_df:pd.DataFrame,
     out_prefix:str,
 ):
+    custom_palette = sns.color_palette(["red", "grey"])
+    sns.set_palette(custom_palette)
     # Take only instances for which a kinase activity could be computed by both methods
     intersection_index = list(
         set(kinase_activity_method_1_df.index)
@@ -440,48 +445,63 @@ def pairwise_comparison(
     n_downreg = len(downreg_true_kinase_quantile_df) // 2
     n_joined = len(joined_true_kinase_quantile_df) // 2
     plt.clf()
-    plt.figure(figsize=[1.75, 2.5])
+    plt.figure(figsize=[1.6, 2.5])
     ax = sns.violinplot(
         data=joined_true_kinase_quantile_df,
         x="Method",
         y="Normalized rank",
         cut=0,
+        linewidth=0.8,
         #hue="Method",
     )
+    for violin in ax.collections:
+        violin.set_edgecolor("black")
+    for line in ax.lines:
+        line.set_color("black")
     ax.set_title(
-        f"Shared positive examples\n(n={n_joined})"
+        f"Positive examples\n(n={n_joined})"
     )
     #ax.set_yticks(np.arange(0, 1.1, 0.1))
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_joined_true_kinase_quantile.pdf")
     plt.clf()
-    plt.figure(figsize=[1.75, 2.5])
+    plt.figure(figsize=[1.6, 2.5])
     ax = sns.violinplot(
         data=upreg_true_kinase_quantile_df,
         x="Method",
         y="Normalized rank",
         cut=0,
+        linewidth=0.8,
         #hue="Method",
     )
+    for violin in ax.collections:
+        violin.set_edgecolor("black")
+    for line in ax.lines:
+        line.set_color("black")
     ax.set_title(
-        f"Shared positive examples\n(activation, n={n_upreg})"
+        f"Positive examples\n(activation, n={n_upreg})"
     )
     #ax.set_yticks(np.arange(0, 1.1, 0.1))
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_upreg_true_kinase_quantile.pdf")
     plt.clf()
-    plt.figure(figsize=[1.75, 2.5])
+    plt.figure(figsize=[1.6, 2.5])
     ax = sns.violinplot(
         data=downreg_true_kinase_quantile_df,
         x="Method",
         y="Normalized rank",
         cut=0,
+        linewidth=0.8,
         #hue="Method",
     )
+    for violin in ax.collections:
+        violin.set_edgecolor("black")
+    for line in ax.lines:
+        line.set_color("black")
     ax.set_title(
-        f"Shared positive examples\n(inhibition, n={n_downreg})"
+        f"Positive examples\n(inhibition, n={n_downreg})"
     )
     #ax.set_yticks(np.arange(0, 1.1, 0.1))
     sns.despine()
@@ -520,14 +540,17 @@ def pairwise_comparison(
         }
     )
     plt.clf()
-    plt.figure(figsize=[2, 3])
+    plt.figure(figsize=[1.6, 2.5])
     ax = tp_percentage_df.set_index("Method").plot(
-        kind="bar", stacked=True, color=["red", "blue"], alpha=0.5, figsize=(2.2, 2.6)
+        kind="bar", stacked=True, color=["red", "blue"], alpha=0.5, figsize=(1.6, 2.5)
     )
     plt.xticks(rotation=0)
     plt.legend(frameon=False)
     plt.ylim([0.0, 1])
     ax.set_ylabel("Fraction of regulated kinases")
+    ax.set_title(
+        f"Shared examples\n(n={n_upreg + n_downreg})"
+    )
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_topNpercentScore_stacked_barplot.pdf")
@@ -572,14 +595,17 @@ def pairwise_comparison(
         }
     )
     plt.clf()
-    plt.figure(figsize=[2, 3])
+    plt.figure(figsize=[1.6, 2.5])
     ax = tp_percentage_df.set_index("Method").plot(
-        kind="bar", stacked=True, color=["red", "blue"], alpha=0.5, figsize=(2.2, 2.6)
+        kind="bar", stacked=True, color=["red", "blue"], alpha=0.5, figsize=(1.6, 2.5)
     )
     plt.xticks(rotation=0)
     plt.legend(frameon=False)
     plt.ylim([0.0, 1])
     ax.set_ylabel("Fraction of regulated kinases")
+    ax.set_title(
+        f"Shared examples\n(n={n_upreg + n_downreg})"
+    )
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_topNpercentKinases_stacked_barplot.pdf")
@@ -696,7 +722,7 @@ def pairwise_comparison(
         for x in downregulation_negative_indexes_list
         if x in kinase_activity_method_2_df.index
     ]
-    for i in range(256):
+    for i in range(512):
         # randomly sample neg ex in equal number as the pos ex, for up- and down- regulation separately
         upreg_neg_idx_list = sample(
             upregulation_method_2_negative_indexes_list,
@@ -769,27 +795,44 @@ def pairwise_comparison(
     ax = sns.violinplot(
         data=violinplots_upreg_df, x="Metric", y="Value", hue="Method", cut=0
     )
+    for violin in ax.collections:
+        violin.set_edgecolor("black")
+    for line in ax.lines:
+        line.set_color("black")
+    methods = violinplots_upreg_df["Method"].unique()
+    handles = [
+        Patch(facecolor=color, edgecolor="black", label=method, linewidth=0.8)
+        for method, color in zip(methods, custom_palette)
+    ]
+    ax.legend(handles=handles, loc="lower right", frameon=False)
     plt.ylim([0.0, 1.0])
     plt.axhline(y=0.5, color="grey", linestyle="--", linewidth=1)
     ax.set_title(
         f"Shared positive examples\n(activation, n={n_upreg_method_1})"
     )
-    plt.legend(loc="lower right", frameon=False)
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_upreg_auc_prc_violinplots.pdf")
-
     plt.clf()
     plt.figure(figsize=[1.75, 2.5])
     ax = sns.violinplot(
         data=violinplots_downreg_df, x="Metric", y="Value", hue="Method", cut=0
     )
+    for violin in ax.collections:
+        violin.set_edgecolor("black")
+    for line in ax.lines:
+        line.set_color("black")
+    methods = violinplots_downreg_df["Method"].unique()
+    handles = [
+        Patch(facecolor=color, edgecolor="black", label=method, linewidth=0.8)
+        for method, color in zip(methods, custom_palette)
+    ]
+    ax.legend(handles=handles, loc="lower right", frameon=False)
     plt.ylim([0.0, 1.0])
     plt.axhline(y=0.5, color="grey", linestyle="--", linewidth=1)
     ax.set_title(
         f"Shared positive examples\n(inhibition, n={n_downreg_method_1})"
     )
-    plt.legend(loc="lower right", frameon=False)
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_downreg_auc_prc_violinplots.pdf")
@@ -798,12 +841,21 @@ def pairwise_comparison(
     ax = sns.violinplot(
         data=violinplots_joined_df, x="Metric", y="Value", hue="Method", cut=0
     )
+    for violin in ax.collections:
+        violin.set_edgecolor("black")
+    for line in ax.lines:
+        line.set_color("black")
+    methods = violinplots_joined_df["Method"].unique()
+    handles = [
+        Patch(facecolor=color, edgecolor="black", label=method, linewidth=0.8)
+        for method, color in zip(methods, custom_palette)
+    ]
+    ax.legend(handles=handles, loc="lower right", frameon=False)
     plt.ylim([0.0, 1.0])
     plt.axhline(y=0.5, color="grey", linestyle="--", linewidth=1)
     ax.set_title(
         f"Shared positive examples\n(n={n_upreg_method_1 + n_downreg_method_1})"
     )
-    plt.legend(loc="lower right", frameon=False)
     sns.despine()
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_{method_2_name}_joined_auc_prc_violinplots.pdf")
@@ -821,7 +873,7 @@ def pairwise_comparison(
         .merge(kinase_activity_method_2_df, on=["Experiment", "Kinase"], how="left")
     )
     plt.clf()
-    plt.figure(figsize=(3, 3))
+    plt.figure(figsize=(2.5, 2.5))
     #plt.ylim([0, 30])
     sns.histplot(
         regulated_df[f"{method_1_name} Activity Score"].loc[regulated_df["Regulation"] == 1],
@@ -844,7 +896,7 @@ def pairwise_comparison(
     plt.tight_layout()
     plt.savefig(f"{out_prefix}cptac_{method_1_name}_in_{method_1_name}_{method_2_name}_score_regulated_kinases.pdf")
     plt.clf()
-    plt.figure(figsize=(3, 3))
+    plt.figure(figsize=(2.5, 2.5))
     #plt.ylim([0, 30])
     sns.histplot(
         regulated_df[f"{method_2_name} Activity Score"].loc[regulated_df["Regulation"] == 1],
@@ -876,13 +928,15 @@ def pairwise_comparison(
         regulated_df["Regulation"], regulated_df[f"{method_2_name} Activity Score"]
     )
     class_imbalance = n_upregulated / (n_upregulated + n_downregulated)
-    if class_imbalance < 0.5:
-        class_imbalance = 1 / class_imbalance
+    #if class_imbalance < 0.5:
+    #    class_imbalance = 1 / class_imbalance
+    custom_palette = sns.color_palette(["grey", "red"])
+    sns.set_palette(custom_palette)
     plt.clf()
-    plt.figure(figsize=(3, 3))
-    plt.plot(method_1_fpr, method_1_tpr, lw=2, label=f"{method_1_name} (AUC = {method_1_roc_auc:.2f})")
+    plt.figure(figsize=(2.5, 2.5))
     plt.plot(method_2_fpr, method_2_tpr, lw=2, label=f"{method_2_name} (AUC = {method_2_roc_auc:.2f})")
-    plt.plot([0, 1], [0, 1], color="black", lw=0.5, linestyle="-")
+    plt.plot(method_1_fpr, method_1_tpr, lw=2, label=f"{method_1_name} (AUC = {method_1_roc_auc:.2f})")
+    plt.plot([0, 1], [0, 1], color="black", lw=0.5, linestyle="--")
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
     plt.xlabel("FPR")
@@ -901,12 +955,12 @@ def pairwise_comparison(
         regulated_df["Regulation"], regulated_df[f"{method_2_name} Activity Score"]
     )
     plt.clf()
-    plt.figure(figsize=(3, 3))
-    plt.plot(
-        method_1_recall, method_1_precision, lw=2, label=f"{method_1_name} (AUC = {method_1_pr_auc:.2f})"
-    )
+    plt.figure(figsize=(2.5, 2.5))
     plt.plot(
         method_2_recall, method_2_precision, lw=2, label=f"{method_2_name} (AUC = {method_2_pr_auc:.2f})"
+    )
+    plt.plot(
+        method_1_recall, method_1_precision, lw=2, label=f"{method_1_name} (AUC = {method_1_pr_auc:.2f})"
     )
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
@@ -914,7 +968,7 @@ def pairwise_comparison(
         y=class_imbalance,
         lw=0.5,
         color="black",
-        linestyle="-",
+        linestyle="--",
     )
     plt.xlabel("Recall")
     plt.ylabel("Precision")

@@ -377,8 +377,30 @@ def pairwise_comparison(
     ax.plot(angles, values_1, marker='o', label=method_1_name, linewidth=0.8, markersize=3)
     ax.plot(angles, values_2, marker='x', linestyle='--', label=method_2_name, linewidth=0.8, markersize=3)
     ax.set_xticklabels([])
+    # Desired distance from circle edge to closest point of text
+    desired_margin = max_value * 0.3
     for angle, label in zip(angles, labels):
-        ax.text(angle, max_value * 1.3, label, ha='center', va='center')
+        rotation = np.degrees(angle)
+        # Estimate text dimensions (adjust multipliers based on your font)
+        char_width = 0.02 * max_value  # approximate character width in data units
+        char_height = 0.02 * max_value  # approximate character height in data units
+        text_width = len(label) * char_width
+        text_height = char_height
+        # Calculate the radial extent of the rotated text box
+        # When text is rotated by angle θ, the radial extent is:
+        # radial_extent = |width * cos(θ)| + |height * sin(θ)|
+        angle_rad = np.radians(rotation)
+        radial_extent = abs(text_width * np.cos(angle_rad)) + abs(text_height * np.sin(angle_rad))
+        # Position the text center so that the closest edge is at desired distance
+        radial_position = max_value + desired_margin + radial_extent / 2
+        
+        if angle > np.pi/2 and angle < 3*np.pi/2:
+            rotation = rotation + 180
+            ha = 'center'
+        else:
+            ha = 'center'
+        ax.text(angle, radial_position, label, 
+                ha=ha, va='center', rotation=rotation)
     fig.subplots_adjust(left=0.2, right=0.8, top=0.8, bottom=0.2)
     ax.legend(loc='upper right', frameon=False, bbox_to_anchor=(1.3, 1.3))
     plt.tight_layout()
