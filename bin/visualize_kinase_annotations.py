@@ -22,6 +22,10 @@ plt.rcParams['figure.titlesize'] = 8
 plt.rcParams['font.size'] = 6 
 
 
+red_shade = "#d62728"
+grey_shade = "#7f7f7f"
+
+
 kinase_family_colors = {
     "AGC": "#00BA38",
     "CMGC": "#00C19F",
@@ -72,7 +76,8 @@ def plot_kinase_family_regulation_counts(df, x_labels, bar_pdf):
     )
 
     # Define a color palette
-    palette = {"Activation": "#FF000080", "Inhibition": "#0000FF80"}
+    #palette = {"Activation": "#FF000080", "Inhibition": "#0000FF80"}
+    palette = {"Activation": "red", "Inhibition": "grey"}
 
     legend_elements = [
         Patch(facecolor=palette["Activation"], label="Activation"),
@@ -91,16 +96,12 @@ def plot_kinase_family_regulation_counts(df, x_labels, bar_pdf):
         order=x_labels,
     )
 
-    # Set alpha for all bars after creation
-    for patch in ax.patches:
-        patch.set_alpha(0.5)
-
     # Customize the plot
     plt.xlabel("Kinase family")
     plt.ylabel("Count")
     plt.axhline(0, color="black", linewidth=0.5)  # Add vertical line at x=0
     # plt.legend(title='Regulation', labels=['Activation', 'Inhibition'], frameon=False)
-    plt.legend(handles=legend_elements, title="Regulation", frameon=False)
+    plt.legend(handles=legend_elements, frameon=False)
     # plt.xticks(rotation=45)
     plt.tight_layout()
     sns.despine()
@@ -136,8 +137,8 @@ def plot_kinase_specificity_regulation_counts(df, x_labels, bar_pdf):
     )
 
     # Define a color palette
-    palette = {"Activation": "#FF000080", "Inhibition": "#0000FF80"}
-
+    #palette = {"Activation": "#FF000080", "Inhibition": "#0000FF80"}
+    palette = {"Activation": "red", "Inhibition": "grey"}
 
     legend_elements = [
         Patch(facecolor=palette["Activation"], label="Activation"),
@@ -156,16 +157,12 @@ def plot_kinase_specificity_regulation_counts(df, x_labels, bar_pdf):
         order=x_labels,
     )
 
-    # Set alpha for all bars after creation
-    for patch in ax.patches:
-        patch.set_alpha(0.5)
-
     # Customize the plot
     plt.xlabel("Kinase specificity")
     plt.ylabel("Count")
     plt.axhline(0, color="black", linewidth=0.5)  # Add vertical line at x=0
     # plt.legend(title='Regulation', labels=['Activation', 'Inhibition'], frameon=False)
-    plt.legend(handles=legend_elements, title="Regulation", frameon=False)
+    plt.legend(handles=legend_elements, frameon=False)
     # plt.xticks(rotation=45)
     plt.tight_layout()
     sns.despine()

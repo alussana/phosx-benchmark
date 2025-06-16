@@ -18,7 +18,10 @@ plt.rcParams['ytick.labelsize'] = 6
 plt.rcParams['legend.fontsize'] = 6       
 plt.rcParams['figure.titlesize'] = 8   
 plt.rcParams['font.size'] = 6
-#plt.rcParams['patch.edgecolor'] = 'black'
+
+
+red_shade = "#d62728"
+grey_shade = "#7f7f7f"
 
 
 custom_palette = sns.color_palette(["red", "grey"])
@@ -483,7 +486,7 @@ def pairwise_comparison(
     plt.clf()
     plt.figure(figsize=[1.6, 2.5])
     ax = tp_percentage_df.set_index("Method").plot(
-        kind="bar", stacked=True, color=["red", "blue"], alpha=0.5, figsize=(1.6, 2.5)
+        kind="bar", stacked=True, color=[red_shade, grey_shade], figsize=(1.6, 2.5)
     )
     plt.xticks(rotation=0)
     plt.legend(frameon=False, loc="upper left")
@@ -538,7 +541,7 @@ def pairwise_comparison(
     plt.clf()
     plt.figure(figsize=[1.6, 2.5])
     ax = tp_percentage_df.set_index("Method").plot(
-        kind="bar", stacked=True, color=["red", "blue"], alpha=0.5, figsize=(1.6, 2.5)
+        kind="bar", stacked=True, color=[red_shade, grey_shade], figsize=(1.6, 2.5)
     )
     plt.xticks(rotation=0)
     plt.legend(frameon=False, loc="upper left")
@@ -871,7 +874,7 @@ def pairwise_comparison(
     class_imbalance = n_upregulated / (n_upregulated + n_downregulated)
     #if class_imbalance < 0.5:
     #    class_imbalance = 1 / class_imbalance
-    custom_palette = sns.color_palette(["grey", "red"])
+    custom_palette = sns.color_palette([grey_shade, red_shade])
     sns.set_palette(custom_palette)
     plt.clf()
     plt.figure(figsize=(2.5, 2.5))

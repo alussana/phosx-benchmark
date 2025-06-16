@@ -294,7 +294,7 @@ process benchmark_phosx_hernandez2017 {
 
     script:
     """
-    CACHEBUST=nmd
+    CACHEBUST=nmd2
     
     if [ -z "\${PYTHONPATH:-}" ]; then \\
         export PYTHONPATH="${projectDir}/src"; \\
@@ -447,7 +447,7 @@ process benchmark_phosx_per_kinase_hernandez2017 {
 
     script:
     """
-    CACHEBUST=nmd
+    CACHEBUST=nmd2
     
     if [ -z "\${PYTHONPATH:-}" ]; then \\
         export PYTHONPATH="${projectDir}/src"; \\

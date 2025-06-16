@@ -27,7 +27,8 @@ def plot_kin_freq(df, bar_pdf):
     })
 
     # Define a color palette
-    palette = sns.color_palette("viridis", len(plot_data))
+    palette = sns.color_palette(["red"])
+    sns.set_palette(palette)
 
     # Create the barplot
     plt.clf()

@@ -390,7 +390,7 @@ process benchmark_phosx_cptac {
 
     script:
     """
-    CACHEBUST=nmd
+    CACHEBUST=nmd2
     
     if [ -z "\${PYTHONPATH:-}" ]; then \\
         export PYTHONPATH="${projectDir}/src"; \\
@@ -548,7 +548,7 @@ process benchmark_phosx_per_kinase_cptac {
 
     script:
     """
-    CACHEBUST=nmd
+    CACHEBUST=nmd2
     
     if [ -z "\${PYTHONPATH:-}" ]; then \\
         export PYTHONPATH="${projectDir}/src"; \\

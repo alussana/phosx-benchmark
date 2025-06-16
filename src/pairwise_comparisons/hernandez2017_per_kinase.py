@@ -18,7 +18,12 @@ plt.rcParams['figure.titlesize'] = 8
 plt.rcParams['font.size'] = 6 
 
 
-plt.rcParams['axes.prop_cycle'] = plt.cycler(color=['red', 'black'])
+red_shade = "#d62728"
+grey_shade = "#7f7f7f"
+black = "#000000"
+
+
+plt.rcParams['axes.prop_cycle'] = plt.cycler(color=[red_shade, black])
 
 
 def quantile_normalize(df):
